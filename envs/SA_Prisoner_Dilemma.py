@@ -88,8 +88,4 @@ class RepeatedPrisonerDilemma(gym.Env):
         
         return np.array(self.state), reward, done, {}
     
-    def render(self, mode='human', close=False):
-        print(f'Local steps:    {self.local_steps}')
-        print(f'Current Reward:     {self.current_reward}')
-        print(f'Cumulated Reward:   {self.cumulated_reward}')
     
