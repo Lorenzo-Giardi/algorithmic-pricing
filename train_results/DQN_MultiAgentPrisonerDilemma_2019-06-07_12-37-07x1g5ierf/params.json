@@ -1,0 +1,1 @@
+{"num_envs_per_worker": 4, "num_cpus_per_worker": 4, "num_cpus_for_driver": 2, "multiagent": {"policy_graphs": {"agent_0": [null, "Box(2,)", "Discrete(2)", {}], "agent_1": [null, "Box(2,)", "Discrete(2)", {}]}, "policy_mapping_fn": "<function <lambda> at 0x7f858ad71b70>"}}
