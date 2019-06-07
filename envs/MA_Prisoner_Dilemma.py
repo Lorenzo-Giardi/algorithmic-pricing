@@ -36,6 +36,13 @@ Structure of rewards:
    
 Reset condition:
     100 steps
+    
+Dones:
+    {
+    'agent_0':True/False, 
+    'agent_1':True/False,
+    '__all__': True/False,
+    }
 """
 
 class MultiAgentPrisonerDilemma(MultiAgentEnv):
