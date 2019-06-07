@@ -4,6 +4,39 @@ import ray
 import numpy as np
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 
+"""
+REPEATED PRISONER DILEMMA WITH TWO AGENTS
+
+Agents:
+    0: RL agent
+    1: RL agent
+    
+Actions:
+    0: not cooperate
+    1: cooperate
+    
+State: actions in previous period
+    {
+    'agent_0':act0, 
+    'agent_1':act1,
+    }
+    
+Rewards:
+    {
+    'agent_0':rew0, 
+    'agent_1':rew1,
+    }
+
+Structure of rewards:
+    act   -> rew
+    [0,0] -> [1,1]
+    [1,1] -> [4,4]
+    [0,1] -> [5,0]
+    [1,0] -> [0,5]
+   
+Reset condition:
+    100 steps
+"""
 
 class MultiAgentPrisonerDilemma(MultiAgentEnv):
     
