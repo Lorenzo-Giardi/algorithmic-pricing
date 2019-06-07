@@ -10,6 +10,13 @@ env=MultiAgentPrisonerDilemma()
 ray.shutdown()
 ray.init()
 
+"""
+Trainers make algorithms accessible via Python API and command line, they manage
+algorithm configuration, setup of the policy evaluators and optimizers,
+and collection of training metrics. 
+
+"""
+
 trainer = dqn.DQNAgent(env=MultiAgentPrisonerDilemma, config={
         #"num_workers": 1,
         "num_envs_per_worker": 4,
