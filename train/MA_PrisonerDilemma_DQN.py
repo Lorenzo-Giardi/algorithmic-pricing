@@ -26,8 +26,8 @@ trainer = dqn.DQNAgent(env=MultiAgentPrisonerDilemma, config={
         #"train_batch_size": 200,
         "multiagent": {
                 "policy_graphs": {
-                        "agent_0": (None, env.action_space, env.observation_space, {}),
-                        "agent_1": (None, env.action_space, env.observation_space, {}),
+                        "agent_0": (None, env.observation_space, env.action_space, {}),
+                        "agent_1": (None, env.observation_space, env.action_space, {}),
                 },
                 "policy_mapping_fn":
                     lambda agent_id:
