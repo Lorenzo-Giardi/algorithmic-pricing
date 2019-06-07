@@ -14,18 +14,6 @@ Agents:
 Actions:
     0: not cooperate
     1: cooperate
-    
-State: actions in previous period
-    {
-    'agent_0':act0, 
-    'agent_1':act1,
-    }
-    
-Rewards:
-    {
-    'agent_0':rew0, 
-    'agent_1':rew1,
-    }
 
 Structure of rewards:
     act   -> rew
@@ -36,13 +24,6 @@ Structure of rewards:
    
 Reset condition:
     100 steps
-    
-Dones:
-    {
-    'agent_0':True/False, 
-    'agent_1':True/False,
-    '__all__': True/False,
-    }
 """
 
 class MultiAgentPrisonerDilemma(MultiAgentEnv):
@@ -97,4 +78,27 @@ class MultiAgentPrisonerDilemma(MultiAgentEnv):
         info = {'agent_0':{}, 'agent_1':{},}
         
         return self.obs, rew, dones, info
-    
+"""
+Step(act_dict) and Reset() return the following dictionaries:
+obs:
+    {
+    'agent_0':act0, 
+    'agent_1':act1,
+    }
+Rewards:
+    {
+    'agent_0':rew0, 
+    'agent_1':rew1,
+    }
+Dones:
+    {
+    'agent_0':True/False, 
+    'agent_1':True/False,
+    '__all__': True/False,
+    }
+Info:
+    {
+    'agent_0':{}, 
+    'agent_1':{},
+    }
+"""
