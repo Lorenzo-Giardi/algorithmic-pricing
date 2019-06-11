@@ -32,16 +32,17 @@ class MultiAgentPrisonerDilemma(MultiAgentEnv):
         self.agents = ['agent_0', 'agent_1']
         self.dones = set()
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Discrete(2)
+        self.observation_space = gym.spaces.Box(
+                low=np.array([0,0]), high=np.array([1,1]), dtype=np.int32)
         self.local_steps = 0
         self.max_steps = max_steps
-        self.obs = {'agent_0':1, 'agent_1':1,}
+        self.obs = {'agent_0': np.array([1,1]), 'agent_1': np.array([1,1]),}
 
         
     def reset(self):
         self.dones = set()
         self.local_steps = 0
-        self.obs = {'agent_0':1, 'agent_1':1,}
+        self.obs = {'agent_0': np.array([1,1]), 'agent_1': np.array([1,1]),}
         return self.obs
     
     def step(self, action_dict):
@@ -66,7 +67,7 @@ class MultiAgentPrisonerDilemma(MultiAgentEnv):
         
         rew = {'agent_0':rew0, 'agent_1':rew1,}
         
-        self.obs = {'agent_0':act0, 'agent_1':act1,}
+        self.obs = {'agent_0': np.array([act0,act1]), 'agent_1': np.array([act0,act1]),}
         
         if self.local_steps < self.max_steps:
             done = False
@@ -78,6 +79,7 @@ class MultiAgentPrisonerDilemma(MultiAgentEnv):
         info = {'agent_0':{}, 'agent_1':{},}
         
         return self.obs, rew, dones, info
+
 """
 Step(act_dict) and Reset() return the following dictionaries:
 obs:
