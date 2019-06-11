@@ -7,6 +7,12 @@ from ray.tune.logger import pretty_print
 
 env=MultiAgentPrisonerDilemma()
 
+def policy_mapping_fn(agent_id):
+    if agent_id=="agent_0":
+        return "policy_0"
+    else:
+        return "policy_1"
+
 ray.shutdown()
 ray.init()
 
@@ -26,12 +32,10 @@ trainer = dqn.DQNAgent(env=MultiAgentPrisonerDilemma, config={
         #"train_batch_size": 200,
         "multiagent": {
                 "policy_graphs": {
-                        "agent_0": (None, env.observation_space, env.action_space, {}),
-                        "agent_1": (None, env.observation_space, env.action_space, {}),
+                        "policy_0": (None, env.observation_space, env.action_space, {}),
+                        "policy_1": (None, env.observation_space, env.action_space, {}),
                 },
-                "policy_mapping_fn":
-                    lambda agent_id:
-                        random.choice(["agent_0", "agent_1"])
+                "policy_mapping_fn": policy_mapping_fn
         },
 })
 
