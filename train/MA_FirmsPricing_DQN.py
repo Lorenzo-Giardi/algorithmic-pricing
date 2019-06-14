@@ -8,6 +8,7 @@ from ray.tune.logger import pretty_print
 env_config = {"num_agents": 2,"max_steps":10**9}
 env=MultiAgentFirmsPricing(env_config=env_config)
 
+# Function for mapping agents to policies
 def policy_mapping_fn(agent_id):
     if agent_id=="agent_0":
         return "policy_0"
@@ -19,9 +20,10 @@ def policy_mapping_fn(agent_id):
         return "policy_3"
 
 
+# DQN TRAINER
+
 ray.shutdown()
 ray.init()
-
 
 trainer = dqn.DQNAgent(env=MultiAgentFirmsPricing, config={
         "env_config": env_config,
@@ -62,7 +64,8 @@ for i in range(10**6):
     print(pretty_print(result))
        
    
-# TRY APEX
+# APEX-DQN TRAINER
+
 
 ray.shutdown()
 ray.init()
