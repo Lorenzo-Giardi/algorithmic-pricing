@@ -1,5 +1,12 @@
 import gym
-import random   
+import random
+import matplotlib.pyplot as plt
+
+"""
+Based on:
+https://adventuresinmachinelearning.com/reinforcement-learning-tutorial-python-keras/
+https://github.com/adventuresinML/adventures-in-ml-code/blob/master/r_learning_python.py
+"""
 
 def s_id(arg):
     if arg.all() == np.array([0, 0]).all():
@@ -40,9 +47,8 @@ def eps_greedy_tabular_q_learning(env,num_episodes=500):
             
         progress_rew[i] = cumul_rew 
     
-    progress_ep = np.array(range(num_episodes))
         
-    return q_table, progress_rew, progress_ep
+    return q_table, progress_rew
 
-q_table, progress_rew, progress_ep = eps_greedy_tabular_q_learning(RepeatedPrisonerDilemma(),num_episodes=500)
-plt.plot(progress_ep, progress_rew)
+q_table, progress_rew = eps_greedy_tabular_q_learning(RepeatedPrisonerDilemma(),num_episodes=500)
+plt.plot(progress_rew)
