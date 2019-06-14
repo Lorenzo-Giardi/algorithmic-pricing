@@ -8,6 +8,12 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
+"""
+Based on:
+https://keon.io/deep-q-learning/
+https://github.com/keon/deep-q-learning/blob/master/dqn.py
+"""
+
 EPISODES = 1000
 
 class DQNAgent:
