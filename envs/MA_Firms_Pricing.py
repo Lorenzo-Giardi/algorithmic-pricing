@@ -69,7 +69,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         
         # 15 prices, equally spaced
         prices = [1.42617, 1.479722, 1.533274, 1.586826, 1.640379, 1.693931, 
-                  1.747486, 1.801035, 1,854587, 1.908139, 1.961691, 2.015244, 
+                  1.747486, 1.801035, 1.854587, 1.908139, 1.961691, 2.015244, 
                   2.068796, 2.122348, 2.1759]
         # dictionary {actions:prices}
         actions_to_prices_dict = dict(zip(list(range(15)), prices))
