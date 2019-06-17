@@ -8,8 +8,8 @@ from ray.tune import register_env, grid_search
 import ray.rllib.agents.dqn as dqn
 from ray.tune.logger import pretty_print
 
-
-# from envs.MA_Firms_Pricing import MultiAgentFirmsPricing
+# import environment. Files must be in the same directory!
+from MA_Firms_Pricing import MultiAgentFirmsPricing
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--num", type=int, default=2)
