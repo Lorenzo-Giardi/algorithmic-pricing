@@ -9,6 +9,8 @@ import ray.rllib.agents.dqn as dqn
 from ray.tune.logger import pretty_print
 
 # import environment. Files must be in the same directory!
+# path='/home/lorenzo/Desktop'
+# os.chdir(path)
 from MA_Firms_Pricing import MultiAgentFirmsPricing
 
 parser = argparse.ArgumentParser()
