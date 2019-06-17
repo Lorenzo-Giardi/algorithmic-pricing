@@ -9,8 +9,8 @@ from ray.tune.logger import pretty_print
 # from envs.MA_Firms_Pricing import MultiAgentFirmsPricing
 
 parser = argparse.ArgumentParser()
-parser.add_argument(--num, type=int, default=2)
-parser.add_argument(--steps, type=int, default=10**7)
+parser.add_argument("--num", type=int, default=2)
+parser.add_argument("--steps", type=int, default=10**7)
 
 args = parser.parse_args()
 
