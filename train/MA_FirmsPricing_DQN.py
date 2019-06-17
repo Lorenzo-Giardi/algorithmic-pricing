@@ -1,4 +1,5 @@
 import random
+import argparse
 import gym
 import ray
 import numpy as np
@@ -7,8 +8,16 @@ from ray.tune.logger import pretty_print
 
 # from envs.MA_Firms_Pricing import MultiAgentFirmsPricing
 
+parser = argparse.ArgumentParser()
+parser.add_argument(--num, type=int, default=2)
+parser.add_argument(--steps, type=int, default=10**7)
+
+args = parser.parse_args()
+
 # initialize the environment with the given configs
-env_config = {"num_agents": 2,"max_steps":10**9}
+env_config = {"num_agents": args.num,
+              "max_steps":  args.steps,
+             }
 env=MultiAgentFirmsPricing(env_config=env_config)
 
 # Function for mapping agents to policies
