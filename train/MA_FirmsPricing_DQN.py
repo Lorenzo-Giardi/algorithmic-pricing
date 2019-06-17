@@ -20,16 +20,16 @@ env_config = {"num_agents": args.num,
              }
 env=MultiAgentFirmsPricing(env_config=env_config)
 
+def gen_policy():
+    return(DQNPolicyGraph, env.observation_space, env.action_space, {})
+
+policy_graphs = dict() 
+for i in range(args.num):
+    policy_graphs['agent_'+str(i)]=gen_policy()
+
 # Function for mapping agents to policies
 def policy_mapping_fn(agent_id):
-    if agent_id=="agent_0":
-        return "policy_0"
-    elif agent_id=="agent_1":
-        return "policy_1"
-    elif agent_id=="agent_2":
-        return "policy_2"
-    else:
-        return "policy_3"
+    return agent_id
 
 
 # RLLIB DQN TRAINER
@@ -58,12 +58,7 @@ trainer = dqn.DQNAgent(env=MultiAgentFirmsPricing, config={
         # Additional options for multiagent. Map agents in the environment to policies,
         # i.e., 'agents' in the training algorithm.
         "multiagent": {
-                "policy_graphs": {
-                        "policy_0": (None, env.observation_space, env.action_space, {}),
-                        "policy_1": (None, env.observation_space, env.action_space, {}),
-                        #"policy_2": (None, env.observation_space, env.action_space, {}),
-                        #"policy_3": (None, env.observation_space, env.action_space, {}),
-                },
+                "policy_graphs": policy_graphs,
                 "policy_mapping_fn": policy_mapping_fn
         },
         # additional options for the model (i.e. the neural network estimating Qvalues)
