@@ -34,7 +34,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
     
     # env initialization. configs should be provided using a dictionary
     # to avoid errors in RLLib
-    def __init__(self, env_config={"num_agents":2, "max_steps":1000000}):
+    def __init__(self, env_config={"num_agents":2, "max_steps":10**9}):
         self.dones = set()
         self.max_steps = env_config["max_steps"]
         self.num = env_config["num_agents"]
