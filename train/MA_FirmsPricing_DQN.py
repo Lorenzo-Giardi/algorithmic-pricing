@@ -121,6 +121,9 @@ trainer = dqn.ApexAgent(env=MultiAgentFirmsPricing, config={
 })
 
 ### USING TUNE
+# Tune is a framework for hyperparameter search and optimization
+# with a focus on deep learning and deep reinforcement learning
+
 def env_creator(config=env_config):
     return MultiAgentFirmsPricing(config)
 register_env("MultiAgentFirmsPricing", env_creator)
