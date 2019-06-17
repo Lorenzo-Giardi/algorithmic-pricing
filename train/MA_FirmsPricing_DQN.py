@@ -1,10 +1,13 @@
 import random
 import argparse
 import gym
-import ray
 import numpy as np
+import ray
+from ray import tune
+from ray.tune import register_env, grid_search
 import ray.rllib.agents.dqn as dqn
 from ray.tune.logger import pretty_print
+
 
 # from envs.MA_Firms_Pricing import MultiAgentFirmsPricing
 
@@ -108,12 +111,7 @@ trainer = dqn.ApexAgent(env=MultiAgentFirmsPricing, config={
         "num_cpus_per_worker": 2,
         "num_cpus_for_driver": 2,
         "multiagent": {
-                "policy_graphs": {
-                        "policy_0": (None, env.observation_space, env.action_space, {}),
-                        "policy_1": (None, env.observation_space, env.action_space, {}),
-                        #"policy_2": (None, env.observation_space, env.action_space, {}),
-                        #"policy_3": (None, env.observation_space, env.action_space, {}),
-                },
+                "policy_graphs": policy_graphs,
                 "policy_mapping_fn": policy_mapping_fn
         },
         "model": {
@@ -121,3 +119,45 @@ trainer = dqn.ApexAgent(env=MultiAgentFirmsPricing, config={
                 },
         
 })
+
+### USING TUNE
+def env_creator(config=env_config):
+    return MultiAgentFirmsPricing(config)
+register_env("MultiAgentFirmsPricing", env_creator)
+
+ray.shutdown()
+ray.init()
+
+tune.run(
+    "DQN",
+    name="exp_1",
+    stop={timesteps_total: 10**6},
+    config={
+        "env": "MultiAgentFirmsPricing",
+        "env_config": env_config,
+        "horizon": 1000,
+        "soft_horizon": True,
+        "double_q": True,
+        "dueling": True,
+        "hiddens": [],
+        "learning_starts":50000,
+        "lr": tune.grid_search([0.1, 0.05, 0.01]),
+        "exploration_final_eps": tune.grid_search([0.05, 0.01, 0.001]),
+        "buffer_size": 10**5,
+        "timesteps_per_iteration":25000,
+        "target_network_update_freq": 50000,
+        "sample_batch_size":500,
+        "train_batch_size":10000,
+        "num_envs_per_worker": 8,
+        "num_cpus_per_worker": 2,
+        "num_cpus_for_driver": 1,
+        "multiagent": {
+                "policy_graphs": policy_graphs,
+                "policy_mapping_fn": policy_mapping_fn
+        },
+        "model": {
+                "fcnet_hiddens":[128],
+                },
+    }
+  )
+
