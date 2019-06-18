@@ -5,6 +5,7 @@ import numpy as np
 import ray
 from ray import tune
 from ray.tune import register_env, grid_search
+from ray.rllib.agents.dqn_policy import DQNTFPolicy
 import ray.rllib.agents.dqn as dqn
 from ray.tune.logger import pretty_print
 
@@ -25,9 +26,11 @@ env_config = {"num_agents": args.num,
              }
 env=MultiAgentFirmsPricing(env_config=env_config)
 
+# Function for generating new policies
 def gen_policy():
-    return(DQNPolicyGraph, env.observation_space, env.action_space, {})
+    return(DQNTFPolicy, env.observation_space, env.action_space, {})
 
+# Policy graphs dictionary {'policy_name': policy}
 policy_graphs = dict() 
 for i in range(args.num):
     policy_graphs['agent_'+str(i)]=gen_policy()
@@ -55,8 +58,8 @@ trainer = dqn.DQNAgent(env=MultiAgentFirmsPricing, config={
         "buffer_size": 10**5, # replay buffer size
         "target_network_update_freq": 5000,
         "timesteps_per_iteration":10000,
-        "sample_batch_size":16, # batches of this size are collected untile train_batch_size is met
-        "train_batch_size":128, # batch size used for training the neural network
+        "sample_batch_size":128, # batches of this size are collected untile train_batch_size is met
+        "train_batch_size":512, # batch size used for training the neural network
         "num_envs_per_worker": 16, # number of envs to evaluate vectorwise per worker
         "num_cpus_per_worker": 4,
         "num_cpus_for_driver": 2,
@@ -117,7 +120,7 @@ trainer = dqn.ApexAgent(env=MultiAgentFirmsPricing, config={
                 "policy_mapping_fn": policy_mapping_fn
         },
         "model": {
-                "fcnet_hiddens":[128],
+                "fcnet_hiddens":[64],
                 },
         
 })
@@ -151,18 +154,17 @@ tune.run(
         "buffer_size": 10**5,
         "timesteps_per_iteration":25000,
         "target_network_update_freq": 50000,
-        "sample_batch_size":500,
-        "train_batch_size":10000,
+        "sample_batch_size":256,
+        "train_batch_size":1024,
         "num_envs_per_worker": 8,
         "num_cpus_per_worker": 2,
         "num_cpus_for_driver": 1,
         "multiagent": {
                 "policy_graphs": policy_graphs,
-                "policy_mapping_fn": policy_mapping_fn
+                "policy_mapping_fn": tune.function(policy_mapping_fn)
         },
         "model": {
-                "fcnet_hiddens":[128],
+                "fcnet_hiddens":[64],
                 },
     }
   )
-
