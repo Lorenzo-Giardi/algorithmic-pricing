@@ -12,9 +12,9 @@ To correctly import the environment, ensure that the two files are
 located in the same directory and that it is also set as the working directory.
 
 Main features of the algorithm:
-- Epsilon-greedy policy (with eps decay)
+- Epsilon-greedy policy (with eps decay) -> random exploration
 - Q-learning (with lr decay)
-- Optimistic initialization
+- Optimistic initialization -> non-random exploration
 - Stop after 10^5 iterations without changes in strategy ...
 - ... or after 3*10^6 iterations in any case
 """
