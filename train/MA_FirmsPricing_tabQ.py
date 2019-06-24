@@ -3,17 +3,34 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 
-# import environment
-# ! change path to working directory
-# where the environment file should be located
+"""
+Code for two agents tabular Q-Learning in a environment in which
+two firms have to simultaneously set their price with the goal of
+maximizing their profits.
 
+To correctly import the environment, ensure that the two files are
+located in the same directory and that it is also set as the working directory.
+
+Main features of the algorithm:
+- Epsilon-greedy policy (with eps decay)
+- Q-learning (with lr decay)
+- Optimistic initialization
+- Stop after 10^5 iterations without changes in strategy ...
+- ... or after 3*10^6 iterations in any case
+"""
+
+# import environment
 path='/home/lorenzo/Desktop'
 os.chdir(path)
 from MA_Firms_Pricing import MultiAgentFirmsPricing
 
+# Environment configs
+env_config = {"num_agents": 2,
+              "max_steps":  3*10**6,
+             }
 
 # Dictionary from states to states_ids. E.g. (13,7) -> 202
-# !!! keys are tuples !!!
+# !!! keys are tuples:(x,y) rather than [x,y] !!!
         
 actions_space = list(range(15))
 possible_states = [p for p in itertools.product(actions_space, repeat=2)]
@@ -148,10 +165,5 @@ def eps_greedy_tabular_q_learning(
         
     return q0, q1, training_progress_ag0, rew_list
 
-# dictionary for environment configs
-env_config = {"num_agents": 2,
-              "max_steps":  3*10**6,
-             }
-
-# execute
+# execute training
 q0, q1, training_progress_ag0, rew_list = eps_greedy_tabular_q_learning(MultiAgentFirmsPricing(env_config=env_config), 10)
