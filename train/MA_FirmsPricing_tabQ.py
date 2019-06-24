@@ -184,4 +184,7 @@ def eps_greedy_tabular_q_learning(
     return q0, q1, training_progress_ag0, rew_list
 
 # execute training
-q0, q1, training_progress_ag0, rew_list = eps_greedy_tabular_q_learning(MultiAgentFirmsPricing(env_config=env_config), 10)
+q0, q1, training_progress_ag0, rew_list = eps_greedy_tabular_q_learning(
+      MultiAgentFirmsPricing(env_config=env_config),
+      num_episodes=10
+      )
