@@ -17,6 +17,24 @@ Main features of the algorithm:
 - Optimistic initialization -> non-random exploration
 - Stop after 10^5 iterations without changes in strategy ...
 - ... or after 3*10^6 iterations in any case
+
+Main function:
+
+eps_greedy_tabular_q_learning(env, num_episodes, conv_steps)
+
+- Trains 2 tabular Q-learning agents
+- Arguments
+      env: environment (provide env_config dictionary!)
+      num_episodes: number of episodes
+      conv_steps: number of steps after policy convergence
+-Outputs
+      q0: q-table for agent_0
+      q1: q-table for agent_1
+      training_progress_ag0: array of rewards for agent_0 (only last episode)
+      rew_list: array of average reward per episode for agent_0
+      
+TO DO:
+- Improve reporting of training metrics
 """
 
 # import environment
