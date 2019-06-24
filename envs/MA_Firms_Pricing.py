@@ -68,9 +68,16 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         self.local_steps += 1
         
         # 15 prices, equally spaced
-        prices = [1.42617, 1.479722, 1.533274, 1.586826, 1.640379, 1.693931, 
-                  1.747486, 1.801035, 1.854587, 1.908139, 1.961691, 2.015244, 
-                  2.068796, 2.122348, 2.1759]
+        p_min = 1.4315251
+        p_max = 1.9509807
+        p_dist = (p_max - p_min)/14
+        prices = np.zeros(15)
+        
+        for i in range(15):
+            if i==0:
+                prices[i] = p_min
+            else:
+                prices[i] = prices[i-1] + p_dist
         # dictionary {actions:prices}
         actions_to_prices_dict = dict(zip(list(range(15)), prices))
         
