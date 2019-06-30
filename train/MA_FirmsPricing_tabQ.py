@@ -60,42 +60,42 @@ s_dict = dict(zip(possible_states, index_states))
 
 def eps_greedy_tabular_q_learning(
         env=MultiAgentFirmsPricing(),
-        num_episodes=5,
-        conv_steps = 10**5
+        num_episodes=1,
+        conv_steps = 10**5,
+        OPT_INIT = False
         ):
     
     # initialize variables and parameters that remain constant across episodes
-    lr_max = 0.2
-    lr_decay = 0.000001
-    eps_max = 0.5
-    eps_decay = 0.01
-    gamma = 0.95
-    rew_list = list()    
-    
+    lr_max = 0.15
+    lr_min = 0.05
+    lr_decay = 0.0000005
+    eps_max = 0.2
+    eps_decay = 0.00001
+    eps_min = 0.0001
+    gamma = 0.95  
     
     # 1) loop over episodes
     for i in range(num_episodes):
+        
         print("Starting episode: {} of {}".format(i, num_episodes))
         
         # initialize q-tables
-        q0 = np.full((225,15), 10.0)
-        q1 = np.full((225,15), 10.0)
-        
+        if OPT_INIT:
+            q0 = np.full((225,15), 10.0)
+            q1 = np.full((225,15), 10.0)
+        else:
+            q0 = 10*np.random.rand(225, 15)
+            q1 = 10*np.random.rand(225, 15)
         # reset environment
         s = tuple(env.reset()['agent_0'])
         done = False
-        
         # initialize training metrics
         training_progress_ag0 = list()
         training_progress_ag1 = list()
-        ep_reward_0 = 0
-        ep_reward_1 = 0
-        
         # initialize parameters
         eps = eps_max
         lr = lr_max
-        
-        # initialize convergence counters
+        # initialize convergence counter
         new_strategy_0 = np.zeros(15)
         new_strategy_1 = np.zeros(15)
         conv_count_0 = 0
@@ -133,28 +133,27 @@ def eps_greedy_tabular_q_learning(
             q1[s_dict[s],act1] +=  lr * (rew1 +
                     gamma * np.max(q1[s_dict[new_s],:]) - q1[s_dict[s],act1])
             
-            # update state for next iteration
             s = new_s
             
             # decay lr and eps
-            eps *= np.exp(-eps_decay)
-            lr *= np.exp(-lr_decay)
+            if eps > eps_min:
+                eps *= np.exp(-eps_decay)
+            if lr > lr_min:
+                lr *= np.exp(-lr_decay)
             
             
             # store and print training metrics
             training_progress_ag0.append(rew0)
             training_progress_ag1.append(rew1)
             
-            if env.local_steps % 10000==0:
+            if env.local_steps % 50000==0:
                 # print step, scores, ...
                 print("step: {}, score: {}, e: {:.2}, lr: {:.2}"
                  .format(env.local_steps, rewards, eps, lr))
-                # print convergence counters
+                # print counters
                 print("count_0: {}, count_1: {}, max_count: {}"
                  .format(conv_count_0, conv_count_1, conv_steps))
 
-            ep_reward_0 += rew0
-            ep_reward_1 += rew1
             
             # break loop after convergence
             old_strategy_0 = new_strategy_0
@@ -174,17 +173,124 @@ def eps_greedy_tabular_q_learning(
                 conv_count_1 = 0
             
             if conv_count_0 >= conv_steps and conv_count_1 >= conv_steps:
-                print("Policies convergence reached. Breaking episode loop.")
+                delta0 = (rew0 - 0.22589)/(0.337472 - 0.22589)
+                delta1 = (rew1 - 0.22589)/(0.337472 - 0.22589)
+                final_deltas = np.array([delta0, delta1])
+                print("Policies convergence reached. Breaking loop. \n \
+                      Final deltas: {}".format(final_deltas))
                 break
-            
-        # average reward per episode for agent_0     
-        rew_list.append(ep_reward_0/env.local_steps)
         
-        
-    return q0, q1, training_progress_ag0, rew_list
+    return q0, q1, training_progress_ag0, new_strategy_0, new_strategy_1, s
 
-# execute training
-q0, q1, training_progress_ag0, rew_list = eps_greedy_tabular_q_learning(
-      MultiAgentFirmsPricing(env_config=env_config),
-      num_episodes=10
-      )
+
+env_config = {"num_agents": 2,
+              "max_steps":  3*10**6,
+             }
+
+
+# EVALUATION OF TRAINED POLICIES AND IRFs
+
+def play_optimal_strategy(env=MultiAgentFirmsPricing(), STEPS=1000):
+    
+    s = tuple(env.reset()['agent_0'])
+    s = final_state
+    done = False
+    
+    for _ in range(STEPS):
+        act0 = sigma0[s_dict[s]]
+        act1 = sigma1[s_dict[s]]
+        
+        # Combine actions into a dictionary
+        action = {'agent_0':act0, 'agent_1':act1}
+        
+        # step env and divide stuff among agents
+        new_s, rewards, dones, _ = env.step(action)
+        new_s = tuple(new_s['agent_0'])
+        rew0, rew1 = rewards.values()
+        don0, don1, done = dones.values()
+        
+        s = new_s
+        
+        if env.local_steps/STEPS > 0.95:
+            print("step: {}, score: {}, acts: {}"
+                 .format(env.local_steps, rewards.values(), action.values()))
+    
+    return s, rew0, rew1
+   
+
+
+def defection(env=MultiAgentFirmsPricing(), STEPS=50):
+        
+    s_list = [state]
+    rew0_list = [last_rew0]
+    rew1_list = [last_rew1]
+    
+    act0 = 2
+    act1 = sigma1[s_dict[state]]
+    action = {'agent_0':act0, 'agent_1':act1}
+        
+    # step env and divide stuff among agents
+    new_s, rewards, dones, _ = env.step(action)
+    new_s = tuple(new_s['agent_0'])
+    rew0, rew1 = rewards.values()
+    don0, don1, done = dones.values()
+    
+    s = new_s
+    
+    print("T=0, score: {}, actions: {}"
+                 .format(rewards.values(), action.values()))
+    
+    s_list.append(s)
+    rew0_list.append(rew0)
+    rew1_list.append(rew1)
+    
+    for i in range(STEPS):
+        act0 = sigma0[s_dict[s]]
+        act1 = sigma1[s_dict[s]]
+        
+        # Combine actions into a dictionary
+        action = {'agent_0':act0, 'agent_1':act1}
+        
+        # step env and divide stuff among agents
+        new_s, rewards, dones, _ = env.step(action)
+        new_s = tuple(new_s['agent_0'])
+        rew0, rew1 = rewards.values()
+        don0, don1, done = dones.values()
+        
+        s = new_s
+        
+        s_list.append(s)
+        rew0_list.append(rew0)
+        rew1_list.append(rew1)
+        
+        print("T={}, score: {}, actions: {}"
+                 .format(i+1, rewards.values(), action.values()))
+    
+    return s_list, rew0_list, rew1_list
+
+# EXECUTE TRAINING CODE
+q0, q1, training_progress_ag0, sigma0, sigma1, final_state  = eps_greedy_tabular_q_learning(
+        MultiAgentFirmsPricing(env_config=env_config),
+        num_episodes=1
+        )
+
+plt.plot(training_progress_ag0)
+
+# EXECUTE IRFs CODE
+state, last_rew0, last_rew1 = play_optimal_strategy()
+s_list, rew0_list, rew1_list = defection()
+
+# plot absolute profits
+plt.plot(rew0_list[0:25])
+plt.plot(rew1_list[0:25])
+plt.show()
+
+# plot deltas
+rew0_arr = np.array(rew0_list)
+rew1_arr = np.array(rew1_list)
+d0_arr = (rew0_arr - 0.22589)/(0.337472 - 0.22589)
+d1_arr = (rew1_arr - 0.22589)/(0.337472 - 0.22589)
+
+plt.plot(d0_arr[0:25])
+plt.plot(d1_arr[0:25])
+plt.show()
