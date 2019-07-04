@@ -54,24 +54,30 @@ s_dict = dict(zip(possible_states, index_states))
 
 @ray.remote
 def tabQ_training(
-        OPT_INIT = True,
+        INIT = 0,
         EPS_MAX = 0.2,
-        EPS_DECAY = 0.001,
-        LR_MAX = 0.2,
+        EPS_MIN = 0.001,
+        EPS_DECAY = 0.00005,
+        LR_MAX = 0.15,
+        LR_MIN = 0.05,
         LR_DECAY = 0.00000001,
         GAMMA = 0.3,
         CONV_STEPS = 10**5,
-        ENV_CONFIG = {"num_agents": 2, "max_steps":  2*10**6}
+        ENV_CONFIG = {"num_agents": 2, "max_steps":  3*10**6}
         ):
     # initialize env
     env=MultiAgentFirmsPricing(env_config=ENV_CONFIG)
     # initialize q-tables
-    if OPT_INIT:
+    if INIT==0:
         q0 = np.full((225,15), 10.0)
         q1 = np.full((225,15), 10.0)
+    elif INIT==1:
+        q0 = np.full((225,15), 0.0)
+        q1 = np.full((225,15), 0.0)
     else:
-        q0 = 10*np.random.rand(225, 15)
-        q1 = 10*np.random.rand(225, 15)
+        q0 = 3*np.exp(np.random.rand(225,15))
+        q1 = 3*np.exp(np.random.rand(225,15))
+        
     # reset environment
     s = tuple(env.reset()['agent_0'])
     done = False
@@ -121,8 +127,10 @@ def tabQ_training(
         s = new_s
         
         # decay lr and eps
-        eps *= np.exp(-EPS_DECAY)
-        lr *= np.exp(-LR_DECAY)
+        if eps > EPS_MIN:
+                eps *= np.exp(-EPS_DECAY)
+        if lr > LR_MIN:
+                lr *= np.exp(-LR_DECAY)
              
         # store and print training metrics
         training_progress_ag0.append(rew0)
@@ -161,31 +169,215 @@ def tabQ_training(
             break
     
     #return results of interest
-    return final_deltas
-
-### PARALLEL EXECUTION OF EPISODES ###
+    return final_deltas, new_strategy_0, new_strategy_1, s, env.local_steps
 
 results = list()
 for i in range(NUM_EPISODES):
-    print("Starting episode: {} of {}".format(i, NUM_EPISODES))
+    print("Starting training batch: {} of {}".format(i+1, NUM_EPISODES))
     
     results_ids = []
     for _ in range(NUM_CPUS):
         results_ids.append(tabQ_training.remote(
-                OPT_INIT = True,
-                EPS_MAX = 0.2,
-                EPS_DECAY = 0.001,
-                LR_MAX = 0.2,
-                LR_DECAY = 0.00000001,
-                GAMMA = 0.3,
+                INIT = 2,
+                EPS_MAX = 1.0,
+                EPS_MIN = 0.00001,
+                EPS_DECAY = 2*10**(-5),
+                LR_MAX = 0.25,
+                LR_MIN = 0.05,
+                LR_DECAY = 0,
+                GAMMA = 0.95,
                 CONV_STEPS = 10**5,
                 ENV_CONFIG = {"num_agents": 2, "max_steps":  2*10**6}
                 ))
-    
+    print('Finished training batch number {} of {}'.format(i+1, NUM_EPISODES))
     batch_results = ray.get(results_ids)
     results.append(batch_results)
 
 ray.shutdown()
 
-#flatten list of results
-results = [item for sublist in results for item in sublist]
+# split results into multiple variables indexed by episode number
+deltas = []
+strat0 = []
+strat1 = []
+final_state = []
+steps_at_conv = []
+for batch in range(NUM_EPISODES):
+    for cpu in range(NUM_CPUS):
+        deltas.append(results[batch][cpu][0])
+        strat0.append(results[batch][cpu][1])
+        strat1.append(results[batch][cpu][2])
+        final_state.append(results[batch][cpu][3])
+        steps_at_conv.append(results[batch][cpu][4])
+
+# flatten list of results to a unique list
+# res_0 = [item for sublist in res_0 for item in sublist]
+
+   
+# EVALUATION OF TRAINED POLICIES AND IRFs
+
+
+def play_optimal_strategy(final_state,
+                          sigma0,
+                          sigma1,
+                          STEPS=1000,
+                          env=MultiAgentFirmsPricing(),
+                          verbose=True):
+    
+    s = tuple(env.reset()['agent_0'])
+    s = final_state
+    done = False
+    
+    for _ in range(STEPS):
+        act0 = sigma0[s_dict[s]]
+        act1 = sigma1[s_dict[s]]
+        
+        # Combine actions into a dictionary
+        action = {'agent_0':act0, 'agent_1':act1}
+        
+        # step env and divide stuff among agents
+        new_s, rewards, dones, _ = env.step(action)
+        new_s = tuple(new_s['agent_0'])
+        rew0, rew1 = rewards.values()
+        don0, don1, done = dones.values()
+        
+        s = new_s
+        
+        if verbose and env.local_steps/STEPS > 0.95:
+            print("step: {}, score: {}, acts: {}"
+                 .format(env.local_steps, rewards.values(), action.values()))
+    
+    return s, rew0, rew1
+   
+
+def defection(state,
+              sigma0,
+              sigma1,
+              env=MultiAgentFirmsPricing(),
+              STEPS=23,
+              verbose=True):
+        
+    s_list = [state]
+    rew0_list = [last_rew0]
+    rew1_list = [last_rew1]
+    
+    act0 = 2 # play nash price... not necessarily best response!!!
+    act1 = sigma1[s_dict[state]]
+    action = {'agent_0':act0, 'agent_1':act1}
+        
+    # step env and divide stuff among agents
+    new_s, rewards, dones, _ = env.step(action)
+    new_s = tuple(new_s['agent_0'])
+    rew0, rew1 = rewards.values()
+    don0, don1, done = dones.values()
+    
+    s = new_s
+    
+    if verbose:
+        print("T=0, score: {}, actions: {}"
+                 .format(rewards.values(), action.values()))
+    
+    s_list.append(s)
+    rew0_list.append(rew0)
+    rew1_list.append(rew1)
+    
+    for i in range(STEPS):
+        act0 = sigma0[s_dict[s]]
+        act1 = sigma1[s_dict[s]]
+        
+        # Combine actions into a dictionary
+        action = {'agent_0':act0, 'agent_1':act1}
+        
+        # step env and divide stuff among agents
+        new_s, rewards, dones, _ = env.step(action)
+        new_s = tuple(new_s['agent_0'])
+        rew0, rew1 = rewards.values()
+        don0, don1, done = dones.values()
+        
+        s = new_s
+        
+        s_list.append(s)
+        rew0_list.append(rew0)
+        rew1_list.append(rew1)
+        
+        if verbose:
+            print("T={}, score: {}, actions: {}"
+                 .format(i+1, rewards.values(), action.values()))
+    
+    return s_list, rew0_list, rew1_list
+
+    
+# EXECUTE IRFs CODE
+state0 = np.zeros((len(deltas), 25))
+state1 = np.zeros((len(deltas), 25))
+reward0 = np.zeros((len(deltas), 25))
+reward1 = np.zeros((len(deltas), 25))
+for i in range(len(deltas)):
+    state, last_rew0, last_rew1 = play_optimal_strategy(final_state=final_state[i],
+                                                        sigma0=strat0[i],
+                                                        sigma1=strat1[i],
+                                                        verbose=False)
+    s_list, rew0_list, rew1_list = defection(state=state,
+                                                        sigma0=strat0[i],
+                                                        sigma1=strat1[i],
+                                                        verbose=False)
+    s_arr = np.array(s_list)
+    s0 = s_arr[:,0]
+    s1 = s_arr[:,1]
+    
+    state0[i] = np.array(s0)
+    state1[i] = np.array(s1)
+    reward0[i] = np.array(rew0_list)
+    reward1[i] = np.array(rew1_list)
+    
+mean_state0 = state0.mean(axis=0, dtype=np.int32)
+mean_state1 = state1.mean(axis=0, dtype=np.int32) 
+mean_reward0 = reward0.mean(axis=0)
+mean_reward1 = reward1.mean(axis=0)
+
+
+# plot absolute profits
+plt.plot(mean_reward0, label='agent_0')
+plt.plot(mean_reward1, label='agent_1')
+plt.legend()
+plt.title('Absolute profits')
+plt.show()
+
+# plot deltas
+d0_arr = (mean_reward0 - 0.22589)/(0.337472 - 0.22589)
+d1_arr = (mean_reward1 - 0.22589)/(0.337472 - 0.22589)
+
+plt.plot(d0_arr, label='agent_0')
+plt.plot(d1_arr, label='agent_1')
+plt.legend()
+plt.title('Profit gain')
+plt.show()
+
+# plot prices
+# to-do: get dictionary from environment 
+p_min = 1.4315251
+p_max = 1.9509807
+p_dist = (p_max - p_min)/14
+prices = np.zeros(15)
+for i in range(15):
+    if i==0:
+        prices[i] = p_min
+    else:
+        prices[i] = prices[i-1] + p_dist
+
+actions_to_prices_dict = dict(zip(list(range(15)), prices))
+
+
+p0_list = list()
+p1_list = list()
+
+for element in mean_state0:
+    p0_list.append(actions_to_prices_dict[element])
+for element in mean_state1:
+    p1_list.append(actions_to_prices_dict[element])
+    
+
+plt.plot(p0_list, label='agent_0')
+plt.plot(p1_list, label='agent_1')
+plt.legend()
+plt.title('Prices')
+plt.show()
