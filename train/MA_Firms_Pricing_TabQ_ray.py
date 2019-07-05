@@ -162,7 +162,7 @@ def tabQ_training(
             conv_count_1 = 0
         
         if conv_count_0 >= CONV_STEPS and conv_count_1 >= CONV_STEPS:
-            print("Policies convergence reached. Breaking loop.")
+            print("Policies convergence reached. Breaking loop. Step: {}".format(env.local_steps))
             delta0 = (rew0 - 0.22589)/(0.337472 - 0.22589)
             delta1 = (rew1 - 0.22589)/(0.337472 - 0.22589)
             final_deltas = np.array([delta0, delta1])
@@ -170,6 +170,9 @@ def tabQ_training(
     
     #return results of interest
     return final_deltas, new_strategy_0, new_strategy_1, s, env.local_steps
+
+
+### EXECUTE PARALLEL TRAINING ###
 
 results = list()
 for i in range(NUM_EPISODES):
@@ -209,12 +212,8 @@ for batch in range(NUM_EPISODES):
         final_state.append(results[batch][cpu][3])
         steps_at_conv.append(results[batch][cpu][4])
 
-# flatten list of results to a unique list
-# res_0 = [item for sublist in res_0 for item in sublist]
-
    
-# EVALUATION OF TRAINED POLICIES AND IRFs
-
+### EVALUATION OF TRAINED POLICIES ###
 
 def play_optimal_strategy(final_state,
                           sigma0,
@@ -247,8 +246,10 @@ def play_optimal_strategy(final_state,
                  .format(env.local_steps, rewards.values(), action.values()))
     
     return s, rew0, rew1
-   
 
+
+### IMPULSE RESPONSES ###
+    
 def defection(state,
               sigma0,
               sigma1,
@@ -306,7 +307,10 @@ def defection(state,
     return s_list, rew0_list, rew1_list
 
     
-# EXECUTE IRFs CODE
+### EXECUTE EVALUATION AND IMPULSE RESPONSES FUNCTIONS ###
+# Results are stored in a table with number of rows equal to the number of independent
+# episodes, and number of columns equal to the IR timesteps.
+
 state0 = np.zeros((len(deltas), 25))
 state1 = np.zeros((len(deltas), 25))
 reward0 = np.zeros((len(deltas), 25))
@@ -328,21 +332,23 @@ for i in range(len(deltas)):
     state1[i] = np.array(s1)
     reward0[i] = np.array(rew0_list)
     reward1[i] = np.array(rew1_list)
-    
+
+# Take the average over independent episodes.
 mean_state0 = state0.mean(axis=0, dtype=np.int32)
 mean_state1 = state1.mean(axis=0, dtype=np.int32) 
 mean_reward0 = reward0.mean(axis=0)
 mean_reward1 = reward1.mean(axis=0)
 
+### PLOT OF IMPULSE RESPONSE FUNCTIONS ###
 
-# plot absolute profits
+# absolute profits IR
 plt.plot(mean_reward0, label='agent_0')
 plt.plot(mean_reward1, label='agent_1')
 plt.legend()
 plt.title('Absolute profits')
 plt.show()
 
-# plot deltas
+# profit gains (deltas) IR
 d0_arr = (mean_reward0 - 0.22589)/(0.337472 - 0.22589)
 d1_arr = (mean_reward1 - 0.22589)/(0.337472 - 0.22589)
 
@@ -352,7 +358,7 @@ plt.legend()
 plt.title('Profit gain')
 plt.show()
 
-# plot prices
+# prices IR
 # to-do: get dictionary from environment 
 p_min = 1.4315251
 p_max = 1.9509807
