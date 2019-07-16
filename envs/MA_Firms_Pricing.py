@@ -34,15 +34,27 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
     
     # env initialization. configs should be provided using a dictionary
     # to avoid errors in RLLib
-    def __init__(self, env_config={"num_agents":2, "max_steps":10**9}):
+    def __init__(self, env_config={
+                                   "num_agents":2,
+                                   "max_steps":10**9,
+                                   "p_min":1.4315251,
+                                   "p_max":1.9509807,
+                                   "p_num":15,}):
+        # Assign initial values to object variables
         self.dones = set()
+        self.local_steps = 0
         self.max_steps = env_config["max_steps"]
         self.num = env_config["num_agents"]
-        self.action_space = gym.spaces.Discrete(15)
+        self.p_min = env_config["p_min"]
+        self.p_max = env_config["p_max"]
+        self.p_num = env_config["p_num"]
+        
+        # Define sizes of action and observation spaces
+        self.action_space = gym.spaces.Discrete(self.p_num)
         self.observation_space = gym.spaces.Box(
-                low=np.zeros(self.num), high=np.repeat(14, self.num), dtype=np.int32)
-        self.local_steps = 0
-
+                low=np.zeros(self.num), high=np.repeat(self.p_num -1, self.num), dtype=np.int32)
+        
+        # Create list of agents and dictionary of initial observation
         self.agents = list()
         self.obs = dict()
         
@@ -51,21 +63,21 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         for i in range(self.num):
             self.agents.append('agent_'+str(i))
             self.obs.update({'agent_'+str(i):np.repeat(1, self.num)})
+                       
+        # Create a grid of equally spaced prices
+        p_dist = (self.p_max - self.p_min)/(self.p_num-1)
+        prices = np.zeros(self.p_num)
         
-        # Dictionary for converting actions to prices
-        p_min = 1.4315251
-        p_max = 1.9509807
-        p_dist = (p_max - p_min)/14
-        prices = np.zeros(15)
-        
-        for i in range(15):
+        for i in range(self.p_num):
             if i==0:
                 prices[i] = p_min
             else:
                 prices[i] = prices[i-1] + p_dist
-        # dictionary {actions:prices}
-        self.actions_to_prices_dict = dict(zip(list(range(15)), prices))
+        
+        # Create a dictionary {actions:prices}
+        self.actions_to_prices_dict = dict(zip(list(range(self.p_num)), prices))
 
+        
     # function for resetting the env    
     def reset(self):
         self.dones = set()
@@ -75,6 +87,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
             self.obs[i] = np.repeat(1, self.num)
         
         return self.obs
+    
     
     # function for stepping the env
     def step(self, action_dict):
