@@ -51,6 +51,20 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         for i in range(self.num):
             self.agents.append('agent_'+str(i))
             self.obs.update({'agent_'+str(i):np.repeat(1, self.num)})
+        
+        # Dictionary for converting actions to prices
+        p_min = 1.4315251
+        p_max = 1.9509807
+        p_dist = (p_max - p_min)/14
+        prices = np.zeros(15)
+        
+        for i in range(15):
+            if i==0:
+                prices[i] = p_min
+            else:
+                prices[i] = prices[i-1] + p_dist
+        # dictionary {actions:prices}
+        self.actions_to_prices_dict = dict(zip(list(range(15)), prices))
 
     # function for resetting the env    
     def reset(self):
@@ -67,19 +81,8 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         
         self.local_steps += 1
         
-        # 15 prices, equally spaced
-        p_min = 1.4315251
-        p_max = 1.9509807
-        p_dist = (p_max - p_min)/14
-        prices = np.zeros(15)
-        
-        for i in range(15):
-            if i==0:
-                prices[i] = p_min
-            else:
-                prices[i] = prices[i-1] + p_dist
         # dictionary {actions:prices}
-        actions_to_prices_dict = dict(zip(list(range(15)), prices))
+        actions_to_prices_dict = self.actions_to_prices_dict
         
         # dictionary {agent_id : agent_price}
         agt_prices_dict = dict()
@@ -121,11 +124,13 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
             dones.update({i:done})
         dones.update({'__all__':done})
         
-        # dictionary {agent_id: info}
-        info = dict()
+        # compute profit gains
+        deltas = dict()
         for i in self.agents:
-            info.update({i:{}})
+            d = (rew[i] - 0.22589)/(0.337472 - 0.22589)
+            rew.update({i:d})
         
-        return self.obs, rew, dones, info
+        # return observations, rewards, dones and additional info
+        return self.obs, rew, dones, deltas
 
     
