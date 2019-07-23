@@ -70,7 +70,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         
         for i in range(self.p_num):
             if i==0:
-                prices[i] = p_min
+                prices[i] = self.p_min
             else:
                 prices[i] = prices[i-1] + p_dist
         
@@ -141,7 +141,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         deltas = dict()
         for i in self.agents:
             d = (rew[i] - 0.22589)/(0.337472 - 0.22589)
-            rew.update({i:d})
+            deltas.update({i:d})
         
         # return observations, rewards, dones and additional info
         return self.obs, rew, dones, deltas
