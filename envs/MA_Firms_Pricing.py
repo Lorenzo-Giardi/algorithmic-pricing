@@ -112,8 +112,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         # dictionary {agent_id: agent_quantity}
         q_dict = dict()
         for i in self.agents:
-            q = (np.exp((2-agt_prices_dict[i])/0.25))/(
-                np.sum((np.exp((2-prices_array)/0.25))+np.exp(0)))
+            q = (np.exp((2-agt_prices_dict[i])/0.25))/(np.sum((np.exp((2-prices_array)/0.25)))+np.exp(0))
             q_dict.update({i:q})
         
         # dictionary {agent_id: agent_reward}
