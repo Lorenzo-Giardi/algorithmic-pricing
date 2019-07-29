@@ -39,7 +39,8 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
                                    "max_steps":10**9,
                                    "p_min":1.4315251,
                                    "p_max":1.9509807,
-                                   "p_num":15,}):
+                                   "p_num":15,
+                                   "use_md":False,}):
         # Assign initial values to object variables
         self.dones = set()
         self.local_steps = 0
@@ -51,7 +52,10 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         
         # Define sizes of action and observation spaces
         self.action_space = gym.spaces.Discrete(self.p_num)
-        self.observation_space = gym.spaces.Box(
+        if env_config["use_md"]==True:
+            self.observation_space = gym.spaces.MultiDiscrete([15, 15])
+        else:
+            self.observation_space = gym.spaces.Box(
                 low=np.zeros(self.num), high=np.repeat(self.p_num -1, self.num), dtype=np.int32)
         
         # Create list of agents and dictionary of initial observation
@@ -137,12 +141,12 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         dones.update({'__all__':done})
         
         # compute profit gains
-        deltas = dict()
+        info = dict()
         for i in self.agents:
             d = (rew[i] - 0.22589)/(0.337472 - 0.22589)
-            deltas.update({i:d})
+            info.update({i:{'delta':d}})
         
         # return observations, rewards, dones and additional info
-        return self.obs, rew, dones, deltas
+        return self.obs, rew, dones, info
 
     
