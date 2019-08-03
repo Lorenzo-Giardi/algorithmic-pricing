@@ -52,6 +52,7 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
 
         self.agents = list()
         self.obs = dict()
+        self.info = dict()
         
         for i in range(self.num):
             self.agents.append('agent_'+str(i))
