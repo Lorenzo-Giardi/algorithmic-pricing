@@ -1,3 +1,25 @@
+"""
+Code for training two agents using tabular Q-Learning in a environment in which
+two firms have to simultaneously set their price with the goal of
+maximizing their individual profits.
+To correctly import the environment, ensure that the two files are
+located in the same directory and that it is also set as the working directory.
+Main features of the algorithm:
+- Epsilon-greedy policy (with eps decay) -> random exploration
+- Q-learning (with lr decay)
+- Optimistic initialization -> non-random exploration
+- Stop after 10^5 iterations without changes in strategy ...
+- ... or after 3*10^6 iterations in any case
+PARALLEL EXECUTION OF EPISODES
+Different episodes are scheduled to run on different ray actors (~ CPU cores)
+-> The function decorator @ray.remote signals that the function can be
+    executed in parallel within a ray cluster
+-> The function.remote() command returns an Object_ID and creates a ray taks
+    that is scheduled to run on a ray actor
+-> The ray.get(Object_IDs) command returns the actual Object, i.e. the result
+    that has been returned by the function
+"""
+
 import os
 import itertools
 import numpy as np
