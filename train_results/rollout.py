@@ -5,6 +5,7 @@ Created on Thu Jul 25 10:06:04 2019
 
 @author: lorenzo
 """
+# From: https://github.com/ray-project/ray/blob/master/rllib/rollout.py
 
 import argparse
 import collections
