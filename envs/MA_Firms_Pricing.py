@@ -58,12 +58,13 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         self.agents = list()
         self.obs = dict()
         self.info = dict()
+        obs = np.random.randint(15)
         
         # Name agents 'agent_0', 'agent_1' and so on
         # and initialize observation to nash equilibrium
         for i in range(self.num):
             self.agents.append('agent_'+str(i))
-            self.obs.update({'agent_'+str(i):np.repeat(1, self.num)})
+            self.obs.update({'agent_'+str(i):np.repeat(obs, self.num)})
                        
         # Create a grid of equally spaced prices
         p_dist = (self.p_max - self.p_min)/(self.p_num-1)
@@ -83,9 +84,10 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
     def reset(self):
         self.dones = set()
         self.local_steps = 0
+        obs = np.random.randint(15)
         
         for i in self.agents:
-            self.obs[i] = np.repeat(1, self.num)
+            self.obs[i] = np.repeat(obs, self.num)
         
         return self.obs
     
