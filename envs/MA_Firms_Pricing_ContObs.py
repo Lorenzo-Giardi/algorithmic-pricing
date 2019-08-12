@@ -49,6 +49,7 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
         self.action_space = gym.spaces.Discrete(5)
         self.observation_space = gym.spaces.Box(
                 low=np.repeat(self.p_min, self.num), high=np.repeat(self.p_max, self.num), dtype=np.float16)
+        
 
         self.agents = list()
         self.obs = dict()
@@ -58,8 +59,9 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
             self.agents.append('agent_'+str(i))
             self.obs.update({'agent_'+str(i):np.repeat(1.75, self.num)})
             self.info.update({'agent_'+str(i):None})
-        
+            
         self.avg_delta = 0
+
         
     def reset(self):
         self.dones = set()
@@ -95,7 +97,7 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
         old_prices_array = self.obs['agent_0']
         delta_prices_array = np.array(list(delta_p_dict.values()))
         new_prices_array = old_prices_array + delta_prices_array
-        new_prices_array = np.clip(new_prices_array, 1.2, 1.999)
+        new_prices_array = np.clip(new_prices_array, self.p_min, self.p_max - 0.001)
         new_prices_array = new_prices_array.astype(np.float16)
         
         new_prices_dict = dict(zip(self.agents, new_prices_array))
@@ -130,7 +132,6 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
             self.info[i]={"delta":d}
         
         return self.obs, rew, dones, self.info
-    
     
     def render(self):
         # Running average of profit gains
