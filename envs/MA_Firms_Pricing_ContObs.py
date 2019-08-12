@@ -54,11 +54,13 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
         self.agents = list()
         self.obs = dict()
         self.info = dict()
+        p = np.random.uniform(low=self.p_min, high=self.p_max)
         
         for i in range(self.num):
             self.agents.append('agent_'+str(i))
-            self.obs.update({'agent_'+str(i):np.repeat(1.75, self.num)})
             self.info.update({'agent_'+str(i):None})
+            obs = np.repeat(p, self.num)
+            self.obs.update({'agent_'+str(i):obs.astype(np.float16)})
             
         self.avg_delta = 0
 
@@ -66,9 +68,11 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
     def reset(self):
         self.dones = set()
         self.local_steps = 0
+        p = np.random.uniform(low=self.p_min, high=self.p_max)
         
         for i in self.agents:
-            self.obs[i] = np.repeat(1.75, self.num)
+            obs = np.repeat(p, self.num)
+            self.obs[i] = obs.astype(np.float16)
         
         return self.obs
     
