@@ -1,6 +1,8 @@
 ### Tabular Q-learning results
 
 ### RLlib Rollout script
+The rollout.py helper script reconstructs a DQN policy from the checkpoint located at "checkpoint-directory" and renders its behavior in the environment specified by --env.
+
 1) Usage via terminal:
     ./rollout.py checkpoint-path --run algname --env envname --steps 1000 --out rollouts.pkl
     
