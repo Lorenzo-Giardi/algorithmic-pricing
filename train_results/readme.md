@@ -4,7 +4,7 @@ The rollout.py helper script reconstructs a DQN policy from the checkpoint locat
 1) Usage via terminal:
     ./rollout.py checkpoint-path --run algname --env envname --steps 1000 --out rollouts.pkl
     
-2) Usage via Spyder
+2) Usage via Spyder:
 Add to command line options
 checkpoint-path --run algname --env envname
 
