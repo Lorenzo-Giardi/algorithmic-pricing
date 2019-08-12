@@ -1,4 +1,5 @@
 ### Tabular Q-learning results
+![alt text](https://github.com/Lorenzo-Giardi/algorithmic-pricing/blob/master/train_results/TabularQ_with_Ray/FIGURES/fig3-120.png)
 
 ### RLlib Rollout script
 The rollout.py helper script reconstructs a DQN policy from the checkpoint located at "checkpoint-directory" and renders its behavior in the environment specified by --env.
