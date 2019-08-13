@@ -48,6 +48,7 @@ class MultiAgentFirmsPricing(MultiAgentEnv):
         self.p_min = env_config["p_min"]
         self.p_max = env_config["p_max"]
         self.p_num = env_config["p_num"]
+        self.avg_delta = 0
         
         # Define sizes of action and observation spaces
         self.action_space = gym.spaces.Discrete(self.p_num)
