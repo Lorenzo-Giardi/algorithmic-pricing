@@ -1,172 +1,137 @@
-import random
-import argparse
-import gym
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun 17 16:43:12 2019
+
+@author: lorenzo
+"""
+
+# import libraries
+import os
 import numpy as np
 import ray
 from ray import tune
-from ray.tune import register_env, grid_search
-from ray.rllib.agents.dqn_policy import DQNTFPolicy
-import ray.rllib.agents.dqn as dqn
-from ray.tune.logger import pretty_print
 
-# import environment. Files must be in the same directory!
-# path='/home/lorenzo/Desktop'
-# os.chdir(path)
+
+# import environment. set directory to find it.
+path='/home/lorenzo/Desktop/FirmsPricing_DiscrObs'
+os.chdir(path)
 from MA_Firms_Pricing import MultiAgentFirmsPricing
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--num", type=int, default=2)
-parser.add_argument("--steps", type=int, default=10**7)
-
-args = parser.parse_args()
-
 # initialize the environment with the given configs
-env_config = {"num_agents": args.num,
-              "max_steps":  args.steps,
-             }
-env=MultiAgentFirmsPricing(env_config=env_config)
+ENV_CONFIG = {
+           "num_agents":2,
+           "max_steps":10**9,
+           "p_min":1.4315251,
+           "p_max":1.9509807,
+           "p_num":15,}
+env=MultiAgentFirmsPricing(env_config=ENV_CONFIG)
 
-# Function for generating new policies
+
+### TUNE
+
 def gen_policy():
-    return(DQNTFPolicy, env.observation_space, env.action_space, {})
+    return(None, env.observation_space, env.action_space, {})
 
-# Policy graphs dictionary {'policy_name': policy}
 policy_graphs = dict() 
-for i in range(args.num):
+for i in range(env.num):
     policy_graphs['agent_'+str(i)]=gen_policy()
 
 # Function for mapping agents to policies
 def policy_mapping_fn(agent_id):
     return agent_id
 
+"""
+# callbacks for custom metrics
+def on_episode_start(info):
+    episode = info["episode"]
+    episode.user_data["delta0"] = []
+    episode.user_data["delta1"] = []
+    episode.user_data["obs"] = []
 
-# RLLIB DQN TRAINER
+def on_episode_step(info):
+    episode = info["episode"]
+    delta0 = (episode.prev_reward_for(agent_id='agent_0') - 0.22589)/(0.337472 - 0.22589)
+    delta1 = (episode.prev_reward_for(agent_id='agent_1') - 0.22589)/(0.337472 - 0.22589)
+    obs = episode.last_raw_obs_for(agent_id='agent_0')
+    
+    episode.user_data["delta0"].append(delta0)
+    episode.user_data["delta1"].append(delta1)
+    episode.user_data["obs"].append(obs)
 
-ray.shutdown()
-ray.init()
+def on_episode_end(info):
+    episode = info["episode"]
+    
+    delta0 = np.mean(episode.user_data["delta0"])
+    delta1 = np.mean(episode.user_data["delta1"])
+    obs1, obs2 = np.mean(episode.user_data["obs"], axis=0)
 
-trainer = dqn.DQNAgent(env=MultiAgentFirmsPricing, config={
-        "env_config": env_config,
-        "horizon": 1000,
-        "soft_horizon": True, # compute rewards without resetting the env
-        "double_q": True, # use Double-DQN (DDQN)
-        "dueling": True, # use Dueling-DQN
-        "hiddens": [], # fully connected layer for postprocessing
-        "learning_starts":100000,
-        "lr":0.1,
-        "exploration_final_eps":0.001,
-        "buffer_size": 10**5, # replay buffer size
-        "target_network_update_freq": 5000,
-        "timesteps_per_iteration":10000,
-        "sample_batch_size":128, # batches of this size are collected untile train_batch_size is met
-        "train_batch_size":512, # batch size used for training the neural network
-        "num_envs_per_worker": 16, # number of envs to evaluate vectorwise per worker
-        "num_cpus_per_worker": 4,
-        "num_cpus_for_driver": 2,
-        # Additional options for multiagent. Map agents in the environment to policies,
-        # i.e., 'agents' in the training algorithm.
-        "multiagent": {
-                "policy_graphs": policy_graphs,
-                "policy_mapping_fn": policy_mapping_fn
-        },
-        # additional options for the model (i.e. the neural network estimating Qvalues)
-        "model": {
-                "fcnet_hiddens":[64],
-                },
-        
-})
-
-# Train the agents for 1000*(10**6) iterations    
-for i in range(10**6):
-    result = trainer.train()
-    print(pretty_print(result))
-       
-"""   
-APEX-DQN TRAINER
-
-Distributed Prioritized Experience Replay (APE-X) variation of DQN uses a single GPU learner
-and many CPU workers for experience collection, which can scale to hundreds of CPU workers 
-due to the distributed prioritizaion of experience prior to storage in replay buffers.
-
-!!! Huge RAM consumption with multiple workers
-    (the code below uses ~8GB of RAM with only two workers)
+    episode.custom_metrics["delta0"] = delta0
+    episode.custom_metrics["delta1"] = delta1
+    episode.custom_metrics["obs1"] = obs1
+    episode.custom_metrics["obs2"] = obs2
 """
 
-ray.shutdown()
+
+### USING TUNE
+# Tune is a framework for hyperparameter search and optimization
+# with a focus on deep learning and deep reinforcement learning
+
 ray.init()
 
-
-trainer = dqn.ApexAgent(env=MultiAgentFirmsPricing, config={
-        "env_config": env_config,
-        "horizon": 1000,
-        "soft_horizon": True,
-        "double_q": True,
-        "dueling": True,
-        "hiddens": [],
-        "learning_starts":50000,
-        "lr":0.1,
-        "exploration_final_eps":0.001,
-        "buffer_size": 10**5,
-        "timesteps_per_iteration":25000,
-        "target_network_update_freq": 50000,
-        "sample_batch_size":100,
-        "train_batch_size":200,
-        "num_workers": 2,
-        "num_envs_per_worker": 8,
-        "num_cpus_per_worker": 2,
-        "num_cpus_for_driver": 2,
-        "multiagent": {
-                "policy_graphs": policy_graphs,
-                "policy_mapping_fn": policy_mapping_fn
-        },
-        "model": {
-                "fcnet_hiddens":[64],
-                },
-        
-})
-"""
-### USING TUNE ###
-Tune is a framework for hyperparameter search and optimization
-with a focus on deep learning and deep reinforcement learning
-
-If you get a connection error, run: apt-get install redis-server
-"""
-def env_creator(config=env_config):
-    return MultiAgentFirmsPricing(config)
-register_env("MultiAgentFirmsPricing", env_creator)
-
-ray.shutdown()
-ray.init()
-
-tune.run(
-    "DQN",
-    name="exp_1",
-    stop={timesteps_total: 10**6},
+trial = tune.run(
+    run_or_experiment= "APEX",
+    name='10_disc_DQN',
+    stop={"timesteps_total":10**9},
+    checkpoint_freq=100,
+    num_samples = 1,
+    #resume = True,
+    #restore= '/home/lorenzo/Desktop/DQN_MultiAgentFirmsPricing_1_2019-07-25_09-57-16d5zrwkrs/checkpoint_3200/checkpoint-3200',
     config={
-        "env": "MultiAgentFirmsPricing",
-        "env_config": env_config,
-        "horizon": 1000,
-        "soft_horizon": True,
-        "double_q": True,
-        "dueling": True,
-        "hiddens": [],
-        "learning_starts":50000,
-        "lr": tune.grid_search([0.1, 0.05, 0.01]),
-        "exploration_final_eps": tune.grid_search([0.05, 0.01, 0.001]),
-        "buffer_size": 10**5,
-        "timesteps_per_iteration":25000,
-        "target_network_update_freq": 50000,
-        "sample_batch_size":256,
-        "train_batch_size":1024,
-        "num_envs_per_worker": 8,
-        "num_cpus_per_worker": 2,
-        "num_cpus_for_driver": 1,
-        "multiagent": {
-                "policy_graphs": policy_graphs,
-                "policy_mapping_fn": tune.function(policy_mapping_fn)
-        },
-        "model": {
-                "fcnet_hiddens":[64],
-                },
-    }
-  )
+            "env": MultiAgentFirmsPricing,
+            "env_config": ENV_CONFIG,
+            "horizon": 100,
+            "soft_horizon": True,
+            "double_q": True,
+            "dueling": True,
+            "hiddens": [16],
+            "n_step": 3,
+            "num_atoms": 10,
+            #"noisy": True,
+            #"sigma0": 0.5,
+            "gamma": 0.975,
+            "prioritized_replay": True,
+            "prioritized_replay_alpha": 0.5,
+            "beta_annealing_fraction": 0.2,
+            "final_prioritized_replay_beta": 1.0,
+            "learning_starts": 20000,
+            "lr":0.0005,
+            "adam_epsilon": 0.0015,
+            "schedule_max_timesteps": 10**7,
+            "exploration_final_eps":0.02,
+            "exploration_fraction":0.1,
+            "buffer_size": 10**5,
+            "target_network_update_freq": 50000,
+            "sample_batch_size":16,
+            "train_batch_size":64,
+            "observation_filter": "MeanStdFilter",
+            "num_workers": 2,
+            "num_envs_per_worker": 16,
+            "num_cpus_per_worker": 2,
+            "num_cpus_for_driver": 1,
+            "num_gpus":0,
+            "multiagent": {
+                    "policy_graphs": policy_graphs,
+                    "policy_mapping_fn": tune.function(policy_mapping_fn)
+            },
+            "model": {
+                    "fcnet_activation": "tanh",
+                    "fcnet_hiddens":[32, 32],
+                    },
+            #"callbacks": {
+                    #"on_episode_start": tune.function(on_episode_start),
+                    #"on_episode_step": tune.function(on_episode_step),
+                    #"on_episode_end": tune.function(on_episode_end),
+                    #},      
+           },
+)
