@@ -40,7 +40,8 @@ for i in range(env.num):
 def policy_mapping_fn(agent_id):
     return agent_id
 
-
+"""
+=== Not working fine with soft reset! ===
 # callbacks for custom metrics
 def on_episode_start(info):
     episode = info["episode"]
@@ -70,6 +71,7 @@ def on_episode_end(info):
     episode.custom_metrics["delta1"] = delta1
     episode.custom_metrics["price0"] = price0
     episode.custom_metrics["price1"] = price1
+"""
 
 trial = tune.run(
         run_or_experiment= 'APEX',
@@ -118,10 +120,10 @@ trial = tune.run(
                     "fcnet_activation": "tanh",
                     "fcnet_hiddens":[32, 32],
                     },
-            "callbacks": {
-                    "on_episode_start": tune.function(on_episode_start),
-                    "on_episode_step": tune.function(on_episode_step),
-                    "on_episode_end": tune.function(on_episode_end),
-                    },
+            #"callbacks": {
+                    #"on_episode_start": tune.function(on_episode_start),
+                    #"on_episode_step": tune.function(on_episode_step),
+                    #"on_episode_end": tune.function(on_episode_end),
+                    #},
             },
     )
