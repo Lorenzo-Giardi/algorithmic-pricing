@@ -45,11 +45,9 @@ def policy_mapping_fn(agent_id):
 def on_episode_start(info):
     episode = info["episode"]
     episode.user_data["delta0"] = []
-    #episode.user_data["delta1"] = []
+    episode.user_data["delta1"] = []
     episode.user_data["price0"] = []
-    #episode.user_data["price1"] = []
-    episode.user_data["rew0"] = []
-    episode.user_data["info0"] = []
+    episode.user_data["price1"] = []
 
 def on_episode_step(info):
     episode = info["episode"]
@@ -57,16 +55,10 @@ def on_episode_step(info):
     delta1 = (episode.prev_reward_for(agent_id='agent_1') - 0.22589)/(0.337472 - 0.22589)
     price0 = episode.last_raw_obs_for(agent_id='agent_0')[0]
     price1 = episode.last_raw_obs_for(agent_id='agent_0')[1]
-    rew0 = episode.prev_reward_for(agent_id='agent_0')
-    info0 = episode.last_info_for(agent_id='agent_0')
-    info0 = list(info0.values())[0]
-    print(info0)
     episode.user_data["delta0"].append(delta0)
     episode.user_data["delta1"].append(delta1)
     episode.user_data["price0"].append(price0)
     episode.user_data["price1"].append(price1)
-    episode.user_data["rew0"].append(rew0)
-    episode.user_data["info0"].append(info0)
 
 def on_episode_end(info):
     episode = info["episode"]
@@ -74,12 +66,10 @@ def on_episode_end(info):
     delta1 = np.mean(episode.user_data["delta1"])
     price0 = np.mean(episode.user_data["price0"])
     price1 = np.mean(episode.user_data["price1"])
-    rew0 = np.mean(episode.user_data["rew0"])
     episode.custom_metrics["delta0"] = delta0
     episode.custom_metrics["delta1"] = delta1
     episode.custom_metrics["price0"] = price0
     episode.custom_metrics["price1"] = price1
-    episode.custom_metrics["rew0"] = rew0
 
 trial = tune.run(
         run_or_experiment= 'APEX',
