@@ -41,16 +41,24 @@ Example
  --run APEX --env firms_pricing_cont
 """
 
-path='/home/lorenzo/Desktop/FirmsPricing_ContObs'
+path='/home/lorenzo/Desktop/FirmsPricing'
 os.chdir(path)
-from MA_Firms_Pricing_ContObs import MultiAgentFirmsPricingContinuous
+from ENV_ContObs import MultiAgentFirmsPricingContinuous
+from ENV_Discrete import MultiAgentFirmsPricing
 
-ENV_CONFIG = {"num_agents": 2,
+ENV_CONFIG_1 = {"num_agents": 2,
               "max_steps":  10**9,
               "p_min":1.2,
               "p_max":2,}
+ENV_CONFIG_2 = {
+           "num_agents":2,
+           "max_steps":10**9,
+           "p_min":1.4315251,
+           "p_max":1.9509807,
+           "p_num":15,}
 
-register_env("firms_pricing_cont", lambda _: MultiAgentFirmsPricingContinuous(ENV_CONFIG))
+register_env("env_cont", lambda _: MultiAgentFirmsPricingContinuous(ENV_CONFIG_1))
+register_env("env_disc", lambda _: MultiAgentFirmsPricing(ENV_CONFIG_2))
 
 
 def create_parser(parser_creator=None):
