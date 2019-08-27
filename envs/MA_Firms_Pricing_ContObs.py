@@ -83,17 +83,22 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
         
         delta_p_dict = dict()
         for i in self.agents:
-            a = action_dict[i]
+            j = int(i[6]) # get agent numerical index
+            a = action_dict[i] # get agent action
+            x = np.random.uniform(.01, .03) # get a random number
+            y = self.obs['agent_0'][j] # get previous price for agent
+            # use log and exp to ease convergence while still allowing
+            # for sudden changes in prices (e.g. to defect from cooperation)
             if a==0:
-                delta_p = - np.random.uniform(.03, .08)
+                delta_p = - (x + np.log(y)/4)
             elif a==1:
-                delta_p = - np.random.uniform(.01, .03)
+                delta_p = - x
             elif a==2:
                 delta_p = 0
             elif a==3:
-                delta_p = np.random.uniform(.01, .03)
+                delta_p = x
             elif a==4:
-                delta_p = np.random.uniform(.03, .08)
+                delta_p = x + np.exp(-y)/2
             else:
                 raise ValueError('Something is wrong with the action')
             delta_p_dict.update({i:delta_p})
