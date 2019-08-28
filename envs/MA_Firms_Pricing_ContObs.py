@@ -90,7 +90,7 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
             # use log and exp to ease convergence while still allowing
             # for sudden changes in prices (e.g. to defect from cooperation)
             if a==0:
-                delta_p = - (x + np.log(y)/4)
+                delta_p = - (x + (y-self.p_min)/4)
             elif a==1:
                 delta_p = - x
             elif a==2:
@@ -98,7 +98,7 @@ class MultiAgentFirmsPricingContinuous(MultiAgentEnv):
             elif a==3:
                 delta_p = x
             elif a==4:
-                delta_p = x + np.exp(-y)/2
+                delta_p = x + (self.p_max - y)/4
             else:
                 raise ValueError('Something is wrong with the action')
             delta_p_dict.update({i:delta_p})
