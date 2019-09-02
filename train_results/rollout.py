@@ -60,13 +60,6 @@ ENV_CONFIG_2 = {
 register_env("env_cont", lambda _: MultiAgentFirmsPricingContinuous(ENV_CONFIG_1))
 register_env("env_disc", lambda _: MultiAgentFirmsPricing(ENV_CONFIG_2))
 
-delta0 = []
-delta1 = []
-
-d0_irf = []
-d1_irf = []
-obs_irf = []
-
 def create_parser(parser_creator=None):
     parser_creator = parser_creator or argparse.ArgumentParser
     parser = parser_creator(
@@ -140,13 +133,16 @@ def run(args, parser):
             parser.error("the following arguments are required: --env")
         args.env = config.get("env")
 
-    ray.init()
-
     cls = get_agent_class(args.run)
     agent = cls(env=args.env, config=config)
     agent.restore(args.checkpoint)
     num_steps = int(args.steps)
-    rollout(agent, args.env, num_steps, args.out, args.no_render, args.irfs)
+    
+    # call to rollout function
+    deltas, del_irf, obs_irf = rollout(
+            agent, args.env, num_steps, args.out, args.no_render, args.irfs)
+    
+    return deltas, del_irf, obs_irf
 
 
 class DefaultMapping(collections.defaultdict):
@@ -162,6 +158,8 @@ def default_policy_agent_mapping(unused_agent_id):
 
 
 def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
+    
+    deltas = []
     policy_agent_mapping = default_policy_agent_mapping
 
     if hasattr(agent, "workers"):
@@ -229,8 +227,7 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
             next_obs, reward, done, _ = env.step(action)
             
             print(f'Step: {env.local_steps}, action: {action} info: {info}')
-            delta0.append(info['agent_0']['delta'])
-            delta1.append(info['agent_1']['delta'])
+            deltas.append([info['agent_0']['delta'],info['agent_1']['delta']])
             
             if multiagent:
                 for agent_id, r in reward.items():
@@ -253,21 +250,18 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
             rollouts.append(rollout)
         print("Episode reward", reward_total)
     
-    plt.plot(delta0)
-    plt.plot(delta1)
-    plt.show()
-    
-    sns.kdeplot(delta0, delta1, shade=True, cbar=True, cmap='Blues')
+    plt.plot(deltas)
     plt.show()
 
-    if out is not None:
-        pickle.dump(rollouts, open(out, "wb"))
+    sns.kdeplot(deltas, shade=True, cbar=True, cmap='Blues')
+    plt.show()
         
     # === Code for impulse response functions ===
     
     if irfs == True:
-        d0_irf.append(info['agent_0']['delta'])
-        d1_irf.append(info['agent_1']['delta'])
+        del_irf = []
+        obs_irf = []
+        del_irf.append([info['agent_0']['delta'],info['agent_1']['delta']])
         obs_irf.append(obs['agent_0'])
         
         for count in range(100):
@@ -304,19 +298,23 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
             action = action if multiagent else action[_DUMMY_AGENT_ID]
             next_obs, reward, done, info = env.step(action)
             
-            d0_irf.append(info['agent_0']['delta'])
-            d1_irf.append(info['agent_1']['delta'])
+            del_irf.append([info['agent_0']['delta'],info['agent_1']['delta']])
             obs_irf.append(obs['agent_0'])
             
-        plt.plot(d0_irf)
-        plt.plot(d1_irf)
+        plt.plot(del_irf)
         plt.show()
         
         plt.plot(obs_irf)
         plt.show()
+    
+    if out is not None:
+        pickle.dump(rollouts, open(out, "wb"))
+        
+    return deltas, del_irf, obs_irf
 
-
+ray.init()
 if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
-run(args, parser)
+    
+deltas, del_irf, obs_irf = run(args, parser)
