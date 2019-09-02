@@ -60,6 +60,12 @@ ENV_CONFIG_2 = {
 register_env("env_cont", lambda _: MultiAgentFirmsPricingContinuous(ENV_CONFIG_1))
 register_env("env_disc", lambda _: MultiAgentFirmsPricing(ENV_CONFIG_2))
 
+delta0 = []
+delta1 = []
+
+d0_irf = []
+d1_irf = []
+obs_irf = []
 
 def create_parser(parser_creator=None):
     parser_creator = parser_creator or argparse.ArgumentParser
@@ -104,6 +110,10 @@ def create_parser(parser_creator=None):
         type=json.loads,
         help="Algorithm-specific configuration (e.g. env, hyperparams). "
         "Surpresses loading of configuration from checkpoint.")
+    parser.add_argument(
+            "--irfs",
+            default=True,
+            help = "Compute and plot impulse response functions")
     return parser
 
 
@@ -136,7 +146,7 @@ def run(args, parser):
     agent = cls(env=args.env, config=config)
     agent.restore(args.checkpoint)
     num_steps = int(args.steps)
-    rollout(agent, args.env, num_steps, args.out, args.no_render)
+    rollout(agent, args.env, num_steps, args.out, args.no_render, args.irfs)
 
 
 class DefaultMapping(collections.defaultdict):
@@ -151,7 +161,7 @@ def default_policy_agent_mapping(unused_agent_id):
     return DEFAULT_POLICY_ID
 
 
-def rollout(agent, env_name, num_steps, out=None, no_render=False):
+def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
     policy_agent_mapping = default_policy_agent_mapping
 
     if hasattr(agent, "workers"):
@@ -217,6 +227,11 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False):
 
             action = action if multiagent else action[_DUMMY_AGENT_ID]
             next_obs, reward, done, _ = env.step(action)
+            
+            print(f'Step: {env.local_steps}, action: {action} info: {info}')
+            delta0.append(info['agent_0']['delta'])
+            delta1.append(info['agent_1']['delta'])
+            
             if multiagent:
                 for agent_id, r in reward.items():
                     prev_rewards[agent_id] = r
@@ -237,9 +252,68 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False):
         if out is not None:
             rollouts.append(rollout)
         print("Episode reward", reward_total)
+    
+    plt.plot(delta0)
+    plt.plot(delta1)
+    plt.show()
+    
+    sns.kdeplot(delta0, delta1, shade=True, cbar=True, cmap='Blues')
+    plt.show()
 
     if out is not None:
         pickle.dump(rollouts, open(out, "wb"))
+        
+    # === Code for impulse response functions ===
+    
+    if irfs == True:
+        d0_irf.append(info['agent_0']['delta'])
+        d1_irf.append(info['agent_1']['delta'])
+        obs_irf.append(obs['agent_0'])
+        
+        for count in range(100):
+            multi_obs = obs if multiagent else {_DUMMY_AGENT_ID: obs}
+            action_dict = {}
+            for agent_id, a_obs in multi_obs.items():
+                if a_obs is not None:
+                    policy_id = mapping_cache.setdefault(
+                        agent_id, policy_agent_mapping(agent_id))
+                    p_use_lstm = use_lstm[policy_id]
+                    if p_use_lstm:
+                        a_action, p_state, _ = agent.compute_action(
+                            a_obs,
+                            state=agent_states[agent_id],
+                            prev_action=prev_actions[agent_id],
+                            prev_reward=prev_rewards[agent_id],
+                            policy_id=policy_id)
+                        agent_states[agent_id] = p_state
+                    else:
+                        a_action = agent.compute_action(
+                            a_obs,
+                            prev_action=prev_actions[agent_id],
+                            prev_reward=prev_rewards[agent_id],
+                            policy_id=policy_id)
+                    a_action = _flatten_action(a_action)  # tuple actions
+                    if count == 0 and agent_id=='agent_0':
+                        action_dict[agent_id] = 0
+                        prev_actions[agent_id] = 0
+                    else:
+                        action_dict[agent_id] = a_action
+                        prev_actions[agent_id] = a_action
+            action = action_dict
+            
+            action = action if multiagent else action[_DUMMY_AGENT_ID]
+            next_obs, reward, done, info = env.step(action)
+            
+            d0_irf.append(info['agent_0']['delta'])
+            d1_irf.append(info['agent_1']['delta'])
+            obs_irf.append(obs['agent_0'])
+            
+        plt.plot(d0_irf)
+        plt.plot(d1_irf)
+        plt.show()
+        
+        plt.plot(obs_irf)
+        plt.show()
 
 
 if __name__ == "__main__":
