@@ -23,6 +23,10 @@ from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
 from ray.tune.util import merge_dicts
 from ray.tune.registry import register_env
 
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 EXAMPLE_USAGE = """
 Example Usage via RLlib CLI:
     rllib rollout /tmp/ray/checkpoint_dir/checkpoint-0 --run DQN
@@ -41,10 +45,10 @@ Example
  --run APEX --env firms_pricing_cont
 """
 
-path='/home/lorenzo/Desktop/FirmsPricing'
+path='/home/lorenzo/Desktop/FirmsPricing_for_rollout'
 os.chdir(path)
-from ENV_ContObs import MultiAgentFirmsPricingContinuous
-from ENV_Discrete import MultiAgentFirmsPricing
+from MA_Firms_Pricing_ContObs import MultiAgentFirmsPricingContinuous
+from MA_Firms_Pricing import MultiAgentFirmsPricing
 
 ENV_CONFIG_1 = {"num_agents": 2,
               "max_steps":  10**9,
@@ -60,6 +64,8 @@ ENV_CONFIG_2 = {
 register_env("env_cont", lambda _: MultiAgentFirmsPricingContinuous(ENV_CONFIG_1))
 register_env("env_disc", lambda _: MultiAgentFirmsPricing(ENV_CONFIG_2))
 
+### PARSER ###
+# Used to provide configs via command line
 def create_parser(parser_creator=None):
     parser_creator = parser_creator or argparse.ArgumentParser
     parser = parser_creator(
@@ -90,7 +96,7 @@ def create_parser(parser_creator=None):
         help="The gym environment to use.")
     parser.add_argument(
         "--no-render",
-        default=False,
+        default=True,
         action="store_const",
         const=True,
         help="Surpress rendering of the environment.")
@@ -109,8 +115,10 @@ def create_parser(parser_creator=None):
             help = "Compute and plot impulse response functions")
     return parser
 
-
-def run(args, parser):
+### RUNNER FUNCTION ###
+# Used for loading configs, environment and policies
+# by restoring the selected checkpoint
+def run(args, parser, noplot=False, num_episodes=1):
     config = {}
     # Load configuration from file
     config_dir = os.path.dirname(args.checkpoint)
@@ -140,7 +148,7 @@ def run(args, parser):
     
     # call to rollout function
     deltas, del_irf, obs_irf = rollout(
-            agent, args.env, num_steps, args.out, args.no_render, args.irfs)
+            agent, args.env, num_steps, args.out, args.no_render, args.irfs, noplot, num_episodes)
     
     return deltas, del_irf, obs_irf
 
@@ -156,10 +164,12 @@ class DefaultMapping(collections.defaultdict):
 def default_policy_agent_mapping(unused_agent_id):
     return DEFAULT_POLICY_ID
 
-
-def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
+### ROLLOUT FUNCTION ###
+def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True, noplot=False, num_episodes=1):
+    Deltas = []
+    Del_irf = []
+    Obs_irf = []
     
-    deltas = []
     policy_agent_mapping = default_policy_agent_mapping
 
     if hasattr(agent, "workers"):
@@ -183,8 +193,11 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
 
     if out is not None:
         rollouts = []
-    steps = 0
-    while steps < (num_steps or steps + 1):
+    
+    episode = 0
+
+    while episode < num_episodes:
+        print(f'Episode {episode} of {num_episodes}')
         mapping_cache = {}  # in case policy_agent_mapping is stochastic
         if out is not None:
             rollout = []
@@ -196,6 +209,9 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
         prev_rewards = collections.defaultdict(lambda: 0.)
         done = False
         reward_total = 0.0
+        steps = 0
+        deltas = []
+        
         while not done and steps < (num_steps or steps + 1):
             multi_obs = obs if multiagent else {_DUMMY_AGENT_ID: obs}
             action_dict = {}
@@ -222,11 +238,10 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
                     action_dict[agent_id] = a_action
                     prev_actions[agent_id] = a_action
             action = action_dict
-
             action = action if multiagent else action[_DUMMY_AGENT_ID]
-            next_obs, reward, done, _ = env.step(action)
+            next_obs, reward, done, info = env.step(action)
             
-            print(f'Step: {env.local_steps}, action: {action} info: {info}')
+            #print(f'Step: {env.local_steps}, action: {action} info: {info}')
             deltas.append([info['agent_0']['delta'],info['agent_1']['delta']])
             
             if multiagent:
@@ -249,72 +264,109 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True):
         if out is not None:
             rollouts.append(rollout)
         print("Episode reward", reward_total)
-    
-    plt.plot(deltas)
-    plt.show()
-
-    sns.kdeplot(deltas, shade=True, cbar=True, cmap='Blues')
-    plt.show()
         
-    # === Code for impulse response functions ===
-    
-    if irfs == True:
-        del_irf = []
-        obs_irf = []
-        del_irf.append([info['agent_0']['delta'],info['agent_1']['delta']])
-        obs_irf.append(obs['agent_0'])
+        if noplot == False:
+            plt.plot(deltas)
+            plt.show()
         
-        for count in range(100):
-            multi_obs = obs if multiagent else {_DUMMY_AGENT_ID: obs}
-            action_dict = {}
-            for agent_id, a_obs in multi_obs.items():
-                if a_obs is not None:
-                    policy_id = mapping_cache.setdefault(
-                        agent_id, policy_agent_mapping(agent_id))
-                    p_use_lstm = use_lstm[policy_id]
-                    if p_use_lstm:
-                        a_action, p_state, _ = agent.compute_action(
-                            a_obs,
-                            state=agent_states[agent_id],
-                            prev_action=prev_actions[agent_id],
-                            prev_reward=prev_rewards[agent_id],
-                            policy_id=policy_id)
-                        agent_states[agent_id] = p_state
-                    else:
-                        a_action = agent.compute_action(
-                            a_obs,
-                            prev_action=prev_actions[agent_id],
-                            prev_reward=prev_rewards[agent_id],
-                            policy_id=policy_id)
-                    a_action = _flatten_action(a_action)  # tuple actions
-                    if count == 0 and agent_id=='agent_0':
-                        action_dict[agent_id] = 0
-                        prev_actions[agent_id] = 0
-                    else:
-                        action_dict[agent_id] = a_action
-                        prev_actions[agent_id] = a_action
-            action = action_dict
+            sns.kdeplot(deltas, shade=True, cbar=True, cmap='Blues')
+            plt.show()
             
-            action = action if multiagent else action[_DUMMY_AGENT_ID]
-            next_obs, reward, done, info = env.step(action)
-            
+        # === Code for impulse response functions ===
+        
+        if irfs == True:
+            del_irf = []
+            obs_irf = []
             del_irf.append([info['agent_0']['delta'],info['agent_1']['delta']])
             obs_irf.append(obs['agent_0'])
             
-        plt.plot(del_irf)
-        plt.show()
-        
-        plt.plot(obs_irf)
-        plt.show()
+            for count in range(100):
+                multi_obs = obs if multiagent else {_DUMMY_AGENT_ID: obs}
+                action_dict = {}
+                for agent_id, a_obs in multi_obs.items():
+                    if a_obs is not None:
+                        policy_id = mapping_cache.setdefault(
+                            agent_id, policy_agent_mapping(agent_id))
+                        p_use_lstm = use_lstm[policy_id]
+                        if p_use_lstm:
+                            a_action, p_state, _ = agent.compute_action(
+                                a_obs,
+                                state=agent_states[agent_id],
+                                prev_action=prev_actions[agent_id],
+                                prev_reward=prev_rewards[agent_id],
+                                policy_id=policy_id)
+                            agent_states[agent_id] = p_state
+                        else:
+                            a_action = agent.compute_action(
+                                a_obs,
+                                prev_action=prev_actions[agent_id],
+                                prev_reward=prev_rewards[agent_id],
+                                policy_id=policy_id)
+                        a_action = _flatten_action(a_action)  # tuple actions
+                        if count < 3 and agent_id=='agent_0':
+                            action_dict[agent_id] = 0
+                            prev_actions[agent_id] = 0
+                        else:
+                            action_dict[agent_id] = a_action
+                            prev_actions[agent_id] = a_action
+                action = action_dict
+                
+                action = action if multiagent else action[_DUMMY_AGENT_ID]
+                next_obs, reward, done, info = env.step(action)
+                
+                del_irf.append([info['agent_0']['delta'],info['agent_1']['delta']])
+                obs_irf.append(obs['agent_0'])
+            
+            if noplot==False:
+                plt.plot(del_irf)
+                plt.show()
+                
+                plt.plot(obs_irf)
+                plt.show()
+            
+        episode += 1
+        Deltas.append(deltas)
+        Del_irf.append(del_irf)
+        Obs_irf.append(obs_irf)
     
     if out is not None:
         pickle.dump(rollouts, open(out, "wb"))
-        
-    return deltas, del_irf, obs_irf
+    
+    return Deltas, Del_irf, Obs_irf
+
+### EXECUTE CODE ###
 
 ray.init()
 if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
     
-deltas, del_irf, obs_irf = run(args, parser)
+Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=100)
+
+d_array = np.array(Deltas)
+d_array = d_array.mean(axis=0)
+dirf_array = np.array(Del_irf)
+dirf_array = dirf_array.mean(axis=0)
+obs_array = np.array(Obs_irf)
+obs_array = obs_array.mean(axis=0)
+
+# plots for general rollout
+sns.kdeplot(d_array, shade=True, cbar=True, cmap='Blues')
+plt.show()
+
+# plot IRFs for deltas
+plt.plot(dirf_array[:,0], label='agent_0', c="#247afd")
+plt.plot(dirf_array[:,1], label='agent_1', c="#fd8d49")
+plt.axhline(1, linestyle='dashed', c="#929591")
+plt.legend()
+plt.savefig('deltas-irf-longdev2.png', dpi=600)
+plt.show()
+
+# plot IRFs for prices
+plt.plot(obs_array[:,0], label='agent_0', c="#247afd")
+plt.plot(obs_array[:,1], label='agent_1', c="#fd8d49")
+#plt.axhline(1.48, linestyle='dashed', c="#929591")
+#plt.axhline(1.93, linestyle='dashed', c="#929591")
+plt.legend()
+plt.savefig('prices-irf-longdev2.png', dpi=600)
+plt.show()
