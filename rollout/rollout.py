@@ -45,7 +45,7 @@ Example
  --run APEX --env firms_pricing_cont
 """
 
-path='/home/lorenzo/Desktop/FirmsPricing_for_rollout'
+path='/home/lorenzo/algorithmic-pricing/rollout/'
 os.chdir(path)
 from MA_Firms_Pricing_ContObs import MultiAgentFirmsPricingContinuous
 from MA_Firms_Pricing import MultiAgentFirmsPricing
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
     
-Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=100)
+Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=20)
 
 d_array = np.array(Deltas)
 d_array = d_array.mean(axis=0)
@@ -350,23 +350,53 @@ dirf_array = dirf_array.mean(axis=0)
 obs_array = np.array(Obs_irf)
 obs_array = obs_array.mean(axis=0)
 
+sns.set_style("ticks")
+
 # plots for general rollout
 sns.kdeplot(d_array, shade=True, cbar=True, cmap='Blues')
+plt.xlabel('Agent_0')
+plt.ylabel('Agent_1')
+plt.savefig('bivariate-density-deltas-3.png', dpi=600)
 plt.show()
 
-# plot IRFs for deltas
-plt.plot(dirf_array[:,0], label='agent_0', c="#247afd")
-plt.plot(dirf_array[:,1], label='agent_1', c="#fd8d49")
+sns.kdeplot(d_array[:,0], shade=True, label='Agent_0')
+sns.kdeplot(d_array[:,1], shade=True, label='Agent_1')
+plt.xlabel('Profit gains (deltas)')
+plt.legend()
+plt.savefig('bivariate-density-deltas-3.png', dpi=600)
+plt.show()
+
+plt.plot(d_array[0:2000,0], label='Agent_0', lw=0.4, alpha=0.9)
+plt.plot(d_array[0:2000,1], label='Agent_1', lw=0.4, alpha=0.9)
+plt.xlabel('Timesteps')
+plt.ylabel('Profit gains (deltas)')
+plt.legend()
+plt.savefig('plot-deltas-3.png', dpi=600)
+plt.show()
+
+# plots for impulse response functions
+plt.plot(dirf_array[:,0], label='Agent_0', c="#247afd")
+plt.plot(dirf_array[:,1], label='Agent_1', c="#fd8d49")
 plt.axhline(1, linestyle='dashed', c="#929591")
+plt.xlabel('Timesteps')
+plt.ylabel('Profit gains (deltas)')
 plt.legend()
-plt.savefig('deltas-irf-longdev2.png', dpi=600)
+plt.savefig('deltas-irf-shortdev-3.png', dpi=600)
 plt.show()
 
-# plot IRFs for prices
-plt.plot(obs_array[:,0], label='agent_0', c="#247afd")
-plt.plot(obs_array[:,1], label='agent_1', c="#fd8d49")
-#plt.axhline(1.48, linestyle='dashed', c="#929591")
-#plt.axhline(1.93, linestyle='dashed', c="#929591")
+
+plt.plot(obs_array[:,0], label='Agent_0', c="#247afd")
+plt.plot(obs_array[:,1], label='Agent_1', c="#fd8d49")
+plt.xlabel('Timesteps')
+plt.ylabel('Prices')
 plt.legend()
-plt.savefig('prices-irf-longdev2.png', dpi=600)
+plt.savefig('prices-irf-shortdev-3.png', dpi=600)
 plt.show()
+
+# save some data as pandas dataframe
+import pandas as pd
+Deltas_df = pd.DataFrame(d_array)
+Deltas_df.columns = ['Agent_0', 'Agent_1']
+
+# save dataframe to disk
+# Deltas_df.to_csv('Deltas_df.csv')
