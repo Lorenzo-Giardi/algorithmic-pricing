@@ -303,7 +303,7 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True, no
                                 prev_reward=prev_rewards[agent_id],
                                 policy_id=policy_id)
                         a_action = _flatten_action(a_action)  # tuple actions
-                        if count < 3 and agent_id=='agent_0':
+                        if count < 3 and agent_id=='agent_1':
                             action_dict[agent_id] = 0
                             prev_actions[agent_id] = 0
                         else:
@@ -352,8 +352,9 @@ obs_array = np.array(Obs_irf)
 obs_array = obs_array.mean(axis=0)
 
 # Some general results
-print(f'Overall deltas mean: {d_array.mean()}')
-print(f'Overall deltas standard deviation: {d_array.std()}')
+print(f'Overall deltas mean: {d_array_avgts.mean():,.4f} and std: {d_array_avgts.std():,.4f}')
+print(f'Agent0 deltas mean: {d_array_avgts[:,0].mean():,.4f} and std: {d_array_avgts[:,0].std():,.4f}')
+print(f'Agent1 deltas mean: {d_array_avgts[:,1].mean():,.4f} and std: {d_array_avgts[:,1].std():,.4f}')
 
 sns.set_style("ticks")
 
