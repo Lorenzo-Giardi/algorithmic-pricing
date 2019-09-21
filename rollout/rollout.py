@@ -341,33 +341,38 @@ if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
     
-Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=20)
+Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=100)
 
 d_array = np.array(Deltas)
-d_array = d_array.mean(axis=0)
+d_array_avgsess = d_array.mean(axis=0)
+d_array_avgts = d_array.mean(axis=1)
 dirf_array = np.array(Del_irf)
 dirf_array = dirf_array.mean(axis=0)
 obs_array = np.array(Obs_irf)
 obs_array = obs_array.mean(axis=0)
 
+# Some general results
+print(f'Overall deltas mean: {d_array.mean()}')
+print(f'Overall deltas standard deviation: {d_array.std()}')
+
 sns.set_style("ticks")
 
 # plots for general rollout
-sns.kdeplot(d_array, shade=True, cbar=True, cmap='Blues')
+sns.kdeplot(d_array_avgts, shade=True, cbar=True, cmap='Blues')
 plt.xlabel('Agent_0')
 plt.ylabel('Agent_1')
 plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas-3.png', dpi=600)
 plt.show()
 
-sns.kdeplot(d_array[:,0], shade=True, label='Agent_0')
-sns.kdeplot(d_array[:,1], shade=True, label='Agent_1')
+sns.kdeplot(d_array_avgts[:,0], shade=True, label='Agent_0')
+sns.kdeplot(d_array_avgts[:,1], shade=True, label='Agent_1')
 plt.xlabel('Profit gains (deltas)')
 plt.legend()
 plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas-3.png', dpi=600)
 plt.show()
 
-plt.plot(d_array[0:2000,0], label='Agent_0', lw=0.4, alpha=0.9)
-plt.plot(d_array[0:2000,1], label='Agent_1', lw=0.4, alpha=0.9)
+plt.plot(d_array_avgsess[0:2000,0], label='Agent_0', lw=0.4, alpha=0.9)
+plt.plot(d_array_avgsess[0:2000,1], label='Agent_1', lw=0.4, alpha=0.9)
 plt.xlabel('Timesteps')
 plt.ylabel('Profit gains (deltas)')
 plt.legend()
