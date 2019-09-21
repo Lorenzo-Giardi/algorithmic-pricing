@@ -303,7 +303,7 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True, no
                                 prev_reward=prev_rewards[agent_id],
                                 policy_id=policy_id)
                         a_action = _flatten_action(a_action)  # tuple actions
-                        if count < 3 and agent_id=='agent_1':
+                        if count < 3 and agent_id=='agent_0':
                             action_dict[agent_id] = 0
                             prev_actions[agent_id] = 0
                         else:
@@ -372,8 +372,8 @@ plt.legend()
 plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas-3.png', dpi=600)
 plt.show()
 
-plt.plot(d_array_avgsess[0:2000,0], label='Agent_0', lw=0.4, alpha=0.9)
-plt.plot(d_array_avgsess[0:2000,1], label='Agent_1', lw=0.4, alpha=0.9)
+plt.plot(d_array_avgsess[0:1000,0], label='Agent_0', lw=0.8, alpha=0.9)
+plt.plot(d_array_avgsess[0:1000,1], label='Agent_1', lw=0.8, alpha=0.9)
 plt.xlabel('Timesteps')
 plt.ylabel('Profit gains (deltas)')
 plt.legend()
