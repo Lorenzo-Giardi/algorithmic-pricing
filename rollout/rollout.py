@@ -303,9 +303,9 @@ def rollout(agent, env_name, num_steps, out=None, no_render=False, irfs=True, no
                                 prev_reward=prev_rewards[agent_id],
                                 policy_id=policy_id)
                         a_action = _flatten_action(a_action)  # tuple actions
-                        if count < 3 and agent_id=='agent_0':
-                            action_dict[agent_id] = 0
-                            prev_actions[agent_id] = 0
+                        if count < 1 and agent_id=='agent_0':
+                            action_dict[agent_id] = 2
+                            prev_actions[agent_id] = 2
                         else:
                             action_dict[agent_id] = a_action
                             prev_actions[agent_id] = a_action
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
     
-Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=100)
+Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=20)
 
 d_array = np.array(Deltas)
 d_array_avgsess = d_array.mean(axis=0)
