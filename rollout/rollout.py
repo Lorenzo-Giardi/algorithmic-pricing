@@ -341,7 +341,7 @@ if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
     
-Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=20)
+Deltas, Del_irf, Obs_irf = run(args, parser, noplot=True, num_episodes=100)
 
 d_array = np.array(Deltas)
 d_array_avgsess = d_array.mean(axis=0)
@@ -362,14 +362,14 @@ sns.set_style("ticks")
 sns.kdeplot(d_array_avgts, shade=True, cbar=True, cmap='Blues')
 plt.xlabel('Agent_0')
 plt.ylabel('Agent_1')
-plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas-3.png', dpi=600)
+plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas.png', dpi=600)
 plt.show()
 
 sns.kdeplot(d_array_avgts[:,0], shade=True, label='Agent_0')
 sns.kdeplot(d_array_avgts[:,1], shade=True, label='Agent_1')
 plt.xlabel('Profit gains (deltas)')
 plt.legend()
-plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas-3.png', dpi=600)
+plt.savefig('/home/lorenzo/Desktop/bivariate-density-deltas-2.png', dpi=600)
 plt.show()
 
 plt.plot(d_array_avgsess[0:1000,0], label='Agent_0', lw=0.8, alpha=0.9)
@@ -377,7 +377,7 @@ plt.plot(d_array_avgsess[0:1000,1], label='Agent_1', lw=0.8, alpha=0.9)
 plt.xlabel('Timesteps')
 plt.ylabel('Profit gains (deltas)')
 plt.legend()
-plt.savefig('/home/lorenzo/Desktop/plot-deltas-3.png', dpi=600)
+plt.savefig('/home/lorenzo/Desktop/plot-deltas.png', dpi=600)
 plt.show()
 
 # plots for impulse response functions
@@ -387,7 +387,7 @@ plt.axhline(1, linestyle='dashed', c="#929591")
 plt.xlabel('Timesteps')
 plt.ylabel('Profit gains (deltas)')
 plt.legend()
-plt.savefig('/home/lorenzo/Desktop/deltas-irf-shortdev-3.png', dpi=600)
+plt.savefig('/home/lorenzo/Desktop/deltas-irf.png', dpi=600)
 plt.show()
 
 
@@ -396,7 +396,7 @@ plt.plot(obs_array[:,1], label='Agent_1', c="#fd8d49")
 plt.xlabel('Timesteps')
 plt.ylabel('Prices')
 plt.legend()
-plt.savefig('/home/lorenzo/Desktop/prices-irf-shortdev-3.png', dpi=600)
+plt.savefig('/home/lorenzo/Desktop/prices-irf.png', dpi=600)
 plt.show()
 
 # save some data as pandas dataframe
