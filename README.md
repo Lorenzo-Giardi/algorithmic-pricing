@@ -13,7 +13,7 @@ Environments and algorithms for reinforcement learning driven pricing.
 * DQN with Ray-RLlib
 
 ## Main requirements
-Python                        3.6
-tensorflow                    1.14.0 
-ray                           0.7.3
-gym                           0.14.0 
+* Python                        3.6
+* tensorflow                    1.14.0 
+* ray                           0.7.3
+* gym                           0.14.0 
