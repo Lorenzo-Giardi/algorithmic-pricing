@@ -13,30 +13,25 @@ import seaborn as sns
 
 sns.set_style("ticks")
 
-data1 = pd.read_csv("/home/lorenzo/algorithmic-pricing/train_results/Azure_cont_multisample/APEX_MultiAgentFirmsPricingContinuous_0_2019-09-18_13-15-58uc731pvg/progress.csv") 
-data2 = pd.read_csv("/home/lorenzo/algorithmic-pricing/train_results/Azure_cont_multisample/APEX_MultiAgentFirmsPricingContinuous_1_2019-09-18_14-11-57dep9xakf/progress.csv")
-data3 = pd.read_csv("/home/lorenzo/algorithmic-pricing/train_results/Azure_cont_multisample/APEX_MultiAgentFirmsPricingContinuous_2_2019-09-18_15-06-11ivqb33bz/progress.csv")
-data4 = pd.read_csv("/home/lorenzo/algorithmic-pricing/train_results/Azure_cont_multisample/APEX_MultiAgentFirmsPricingContinuous_3_2019-09-18_16-01-27796dtdhp/progress.csv")
-data5 = pd.read_csv("/home/lorenzo/algorithmic-pricing/train_results/Azure_cont_multisample/APEX_MultiAgentFirmsPricingContinuous_4_2019-09-18_16-57-15l_ueptaq/progress.csv")
+import glob
+import os
+
+path = '/home/lorenzo/algorithmic-pricing/train_results/Azure_cont_multisample/training_metrics' # use your path
+all_files = glob.glob(os.path.join(path, "*.csv"))
+
+j=0
+dfs = dict()
+for i in all_files:
+    dfs.update({'data_'+str(j): pd.read_csv(i) })
+    j += 1
 
 var_list = ['episode_reward_max', 'episode_reward_mean', 'episode_reward_min', 'timesteps_total', \
             'policy_reward_mean/agent_0', 'policy_reward_mean/agent_1', 'info/learner/agent_0/mean_td_error', 'info/learner/agent_1/mean_td_error']
-
-data1 = data1[var_list]
-data2 = data2[var_list]
-data3 = data3[var_list]
-data4 = data4[var_list]
-data5 = data5[var_list]
-
 new_column_names = ['rew_max', 'rew_mean', 'rew_min', 'ts_total', 'rew_agt0', 'rew_agt1', 'tderr_agt0', 'tderr_agt1']
 
-data1.columns = new_column_names
-data2.columns = new_column_names
-data3.columns = new_column_names
-data4.columns = new_column_names
-data5.columns = new_column_names
-
-data_mean = pd.concat([data1, data2, data3, data4, data5]).groupby(level=0).mean()
+for i in dfs:
+    dfs[i] = dfs[i][var_list]
+    dfs[i].columns = new_column_names
 
 # coop profit 67.5
 # nash profit 45.18
@@ -54,51 +49,36 @@ def deltas1(data):
     x = (x-22.59)/(33.75-22.59)
     return x
 
-# Aggregate reward
-plt.plot(data1['ts_total'], deltas(data1['rew_max']))
-plt.plot(data2['ts_total'], deltas(data2['rew_max']))
-plt.plot(data3['ts_total'], deltas(data3['rew_max']))
-plt.plot(data4['ts_total'], deltas(data4['rew_max']))
-plt.plot(data5['ts_total'], deltas(data5['rew_max']))
-plt.xlabel('Timesteps')
-plt.ylabel('Max profit gain')
-plt.savefig('/home/lorenzo/Desktop/training_metrics_1.png', dpi=600)
-plt.show()
+# create new columns for deltas
+for i in dfs:
+    dfs[i]['delta_min'] = deltas(dfs[i]['rew_min'])
+    dfs[i]['delta_mean'] = deltas(dfs[i]['rew_mean'])
+    dfs[i]['delta_max'] = deltas(dfs[i]['rew_max'])
+    dfs[i]['delta_agt0'] = deltas1(dfs[i]['rew_agt0'])
+    dfs[i]['delta_agt1'] = deltas1(dfs[i]['rew_agt1'])
 
-plt.plot(data1['ts_total'], deltas(data1['rew_mean']))
-plt.plot(data2['ts_total'], deltas(data2['rew_mean']))
-plt.plot(data3['ts_total'], deltas(data3['rew_mean']))
-plt.plot(data4['ts_total'], deltas(data4['rew_mean']))
-plt.plot(data5['ts_total'], deltas(data5['rew_mean']))
+# dataframes in dfs have different lenghts!
+for i in dfs:
+    dfs[i] = dfs[i][0:106]
+
+data_mean = pd.concat(dfs.values()).groupby(level=0).mean()
+data_std = pd.concat(dfs.values()).groupby(level=0).std()
+
+# Aggregate reward
+plt.plot(data_mean['ts_total'], data_mean['delta_max'], linestyle='--', color='grey')
+plt.plot(data_mean['ts_total'], data_mean['delta_min'], linestyle='--', color='grey')
+plt.plot(data_mean['ts_total'], data_mean['delta_mean'])
+plt.fill_between(data_mean['ts_total'], (data_mean['delta_mean']-1.96*data_std['delta_mean']), (data_mean['delta_mean']+1.96*data_std['delta_mean']), alpha=.2)
 plt.xlabel('Timesteps')
-plt.ylabel('Mean profit gain')
+plt.ylabel('Profit gain')
 plt.savefig('/home/lorenzo/Desktop/training_metrics_2.png', dpi=600)
 plt.show()
 
-plt.plot(data1['ts_total'], deltas(data1['rew_min']))
-plt.plot(data2['ts_total'], deltas(data2['rew_min']))
-plt.plot(data3['ts_total'], deltas(data3['rew_min']))
-plt.plot(data4['ts_total'], deltas(data4['rew_min']))
-plt.plot(data5['ts_total'], deltas(data5['rew_min']))
-plt.xlabel('Timesteps')
-plt.ylabel('Min profit gain')
-plt.savefig('/home/lorenzo/Desktop/training_metrics_3.png', dpi=600)
-plt.show()
-
 # Per agent reward
-plt.plot(data_mean['ts_total'], deltas1(data_mean['rew_agt0']), label='Agent_0')
-plt.plot(data_mean['ts_total'], deltas1(data_mean['rew_agt1']), label='Agent_1')
+plt.plot(data_mean['ts_total'], data_mean['delta_agt0'], label='Agent_0')
+plt.plot(data_mean['ts_total'], data_mean['delta_agt1'], label='Agent_1')
 plt.xlabel('Timesteps')
 plt.ylabel('Average profit gains')
 plt.legend()
 plt.savefig('/home/lorenzo/Desktop/training_metrics_4.png', dpi=600)
-plt.show()
-
-# Per agent td error
-plt.plot(data_mean['ts_total'], data_mean['tderr_agt0'], label='Agent_0')
-plt.plot(data_mean['ts_total'], data_mean['tderr_agt1'], label='Agent_1')
-plt.xlabel('Timesteps')
-plt.ylabel('Mean TD error')
-plt.legend()
-plt.savefig('/home/lorenzo/Desktop/training_metrics_5.png', dpi=600)
 plt.show()
