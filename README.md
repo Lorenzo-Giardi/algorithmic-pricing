@@ -7,15 +7,10 @@ Environments and algorithms for studying the emergence of cooperation among mult
 * N-agents firms pricing with discrete observation space
 * N-agents firms pricing with continuous observation space
 
--> env folder.
-
 ## Algorithms
 * Tabular Q-learning
 * Tabular Q-learning with Ray for parallel execution
 * DQN with Ray-RLlib
-
--> train folder.
-
 
 ## Main requirements
 * Python                        3.6
