@@ -6,7 +6,7 @@ Environments and algorithms for studying the emergence of cooperation among mult
 * Two agents prisoner dilemma
 * N-agents firms pricing with discrete observation space
 * N-agents firms pricing with continuous observation space
--> env folder
+-> env folder.
 
 ## Algorithms
 * Tabular Q-learning
