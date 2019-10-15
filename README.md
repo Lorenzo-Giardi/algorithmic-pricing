@@ -1,5 +1,5 @@
 # Algorithmic Pricing
-Environments and algorithms for studying the emergence of cooperation among multiple pricing algorithms driven by reinforcement learning. 
+Environments and algorithms for studying the natural emergence of cooperation among multiple pricing algorithms driven by reinforcement learning and its implications for competition policy.
 
 ## Environments
 * Single agent prisoner dilemma (playing vs tit-for-tat opponent)
