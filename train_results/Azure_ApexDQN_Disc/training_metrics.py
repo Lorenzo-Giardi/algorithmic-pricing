@@ -46,6 +46,25 @@ def deltas1(data):
     x = (x-22.59)/(33.75-22.59)
     return x
 
+# plot mean-min-max
+plt.plot(data1['ts_total'], deltas(data1['rew_mean']), alpha = 1, lw=0.95, c='C0', label = 'mean')
+plt.plot(data2['ts_total'], deltas(data2['rew_mean']), alpha = 1, lw=0.95, c='C0')
+plt.plot(data3['ts_total'], deltas(data3['rew_mean']), alpha = 1, lw=0.95, c='C0')
+
+plt.plot(data1['ts_total'], deltas(data1['rew_max']), alpha = 0.75, lw=0.75, linestyle=':', color='C2', label = 'max')
+plt.plot(data2['ts_total'], deltas(data2['rew_max']), alpha = 0.75, lw=0.75, linestyle=':', color='C2')
+plt.plot(data3['ts_total'], deltas(data3['rew_max']), alpha = 0.75, lw=0.75, linestyle=':', color='C2')      
+
+plt.plot(data1['ts_total'], deltas(data1['rew_min']), alpha = 0.75, lw=0.75, linestyle=':', color='#fd8d49', label = 'min')
+plt.plot(data2['ts_total'], deltas(data2['rew_min']), alpha = 0.75, lw=0.75, linestyle=':', color='#fd8d49')
+plt.plot(data3['ts_total'], deltas(data3['rew_min']), alpha = 0.75, lw=0.75, linestyle=':', color='#fd8d49')  
+
+plt.legend(loc = 'lower right')       
+plt.xlabel('Timesteps')
+plt.ylabel('Profit gain (delta)')
+plt.savefig('/home/lorenzo/Desktop/training_metrics_0.png', dpi=600)
+plt.show()
+
 # Aggregate reward
 plt.plot(data1['ts_total'], deltas(data1['rew_max']), label='res0')
 plt.plot(data2['ts_total'], deltas(data2['rew_max']), label='res1')
@@ -72,9 +91,9 @@ plt.savefig('/home/lorenzo/Desktop/training_metrics_3d.png', dpi=600)
 plt.show()
 
 # Per agent reward
-plt.plot(data1['ts_total'], deltas1(data1['rew_agt0']), label='Agent_0', c="#247afd")
-plt.plot(data2['ts_total'], deltas1(data2['rew_agt0']), c="#247afd")
-plt.plot(data3['ts_total'], deltas1(data3['rew_agt0']), c="#247afd")
+plt.plot(data1['ts_total'], deltas1(data1['rew_agt0']), label='Agent_0', c='C0')
+plt.plot(data2['ts_total'], deltas1(data2['rew_agt0']), c='C0')
+plt.plot(data3['ts_total'], deltas1(data3['rew_agt0']), c='C0')
 plt.plot(data1['ts_total'], deltas1(data1['rew_agt1']), label='Agent_1', c="#fd8d49")
 plt.plot(data2['ts_total'], deltas1(data2['rew_agt1']), c="#fd8d49")
 plt.plot(data3['ts_total'], deltas1(data3['rew_agt1']), c="#fd8d49")
@@ -85,9 +104,9 @@ plt.savefig('/home/lorenzo/Desktop/training_metrics_4d.png', dpi=600)
 plt.show()
 
 # Per agent td error
-plt.plot(data1['ts_total'], data1['tderr_agt0'], label='Agent_0', c="#247afd")
-plt.plot(data2['ts_total'], data2['tderr_agt0'], c="#247afd")
-plt.plot(data3['ts_total'], data3['tderr_agt0'], c="#247afd")
+plt.plot(data1['ts_total'], data1['tderr_agt0'], label='Agent_0', c='C0')
+plt.plot(data2['ts_total'], data2['tderr_agt0'], c='C0')
+plt.plot(data3['ts_total'], data3['tderr_agt0'], c='C0')
 plt.plot(data1['ts_total'], data1['tderr_agt1'], label='Agent_1', c="#fd8d49")
 plt.plot(data2['ts_total'], data2['tderr_agt1'], c="#fd8d49")
 plt.plot(data3['ts_total'], data3['tderr_agt1'], c="#fd8d49")

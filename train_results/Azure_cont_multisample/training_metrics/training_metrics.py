@@ -62,18 +62,18 @@ for i in dfs:
     dfs[i] = dfs[i][0:106]
 
 data_mean = pd.concat(dfs.values()).groupby(level=0).mean()
-data_max = pd.concat(dfs.values()).groupby(level=0).min()
-data_min = pd.concat(dfs.values()).groupby(level=0).max()
 data_std = pd.concat(dfs.values()).groupby(level=0).std()
 
 # Aggregate reward
-plt.plot(data_max['ts_total'], data_max['delta_max'], linestyle='--', color='grey')
-plt.plot(data_min['ts_total'], data_min['delta_min'], linestyle='--', color='grey')
-plt.plot(data_mean['ts_total'], data_mean['delta_mean'])
-plt.fill_between(data_mean['ts_total'], (data_mean['delta_mean']-1.96*data_std['delta_mean']), (data_mean['delta_mean']+1.96*data_std['delta_mean']), alpha=.2)
+plt.plot(data_mean['ts_total'], data_mean['delta_max'], linestyle='-.', color='grey', label = 'max')
+plt.plot(data_mean['ts_total'], data_mean['delta_min'], linestyle='--', color='grey', label = 'min')
+plt.plot(data_mean['ts_total'], data_mean['delta_mean'], label = 'mean')
+plt.fill_between(data_mean['ts_total'], (data_mean['delta_mean']-1.96*data_std['delta_mean']),
+                 (data_mean['delta_mean']+1.96*data_std['delta_mean']), alpha=.2)
+plt.legend(loc = 'lower right')
 plt.xlabel('Timesteps')
 plt.ylabel('Profit gain')
-plt.savefig('/home/lorenzo/Desktop/training_metrics_2.png', dpi=600)
+plt.savefig('/home/lorenzo/Desktop/multisample-train_avg_reward.png', dpi=600)
 plt.show()
 
 # Per agent reward
@@ -81,6 +81,6 @@ plt.plot(data_mean['ts_total'], data_mean['delta_agt0'], label='Agent_0')
 plt.plot(data_mean['ts_total'], data_mean['delta_agt1'], label='Agent_1')
 plt.xlabel('Timesteps')
 plt.ylabel('Average profit gains')
-plt.legend()
-plt.savefig('/home/lorenzo/Desktop/training_metrics_4.png', dpi=600)
+plt.legend(loc = 'lower right')
+plt.savefig('/home/lorenzo/Desktop/multisample-train_peragt_reward.png', dpi=600)
 plt.show()
