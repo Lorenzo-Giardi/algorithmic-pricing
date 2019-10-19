@@ -2,7 +2,7 @@
 
 ### Training progress
 
-![](https://github.com/Lorenzo-Giardi/algorithmic-pricing/blob/master/train_results/Azure_ApexDQN_Cont/Plots_training/training_metrics_2.png)
+![](https://github.com/Lorenzo-Giardi/algorithmic-pricing/blob/master/train_results/Azure_ApexDQN_Cont/Plots_training/training_metrics_0.png)
 
 ![](https://github.com/Lorenzo-Giardi/algorithmic-pricing/blob/master/train_results/Azure_ApexDQN_Cont/Plots_training/training_metrics_4.png)
 
