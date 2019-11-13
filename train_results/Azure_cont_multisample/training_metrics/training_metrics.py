@@ -84,3 +84,13 @@ plt.ylabel('Average profit gains')
 plt.legend(loc = 'lower right')
 plt.savefig('/home/lorenzo/Desktop/multisample-train_peragt_reward.png', dpi=600)
 plt.show()
+
+# Per agent td-error
+plt.plot(data_mean['ts_total'], data_mean['tderr_agt0'], label='Agent_0')
+plt.plot(data_mean['ts_total'], data_mean['tderr_agt1'], label='Agent_1')
+plt.xlabel('Timesteps')
+plt.ylabel('Average TD error')
+plt.legend(loc = 'lower right')
+plt.savefig('/home/lorenzo/Desktop/multisample-train_peragt_tderr.png', dpi=600)
+plt.show()
+
