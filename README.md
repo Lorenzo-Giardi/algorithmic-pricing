@@ -1,6 +1,9 @@
 # Algorithmic Pricing
 Environments and algorithms for studying the natural emergence of cooperation among multiple pricing algorithms driven by reinforcement learning and its implications for competition policy.
 
+Average response to price deviations:
+![alt text](https://github.com/Lorenzo-Giardi/algorithmic-pricing/blob/master/train_results/TabularQ_with_Ray/FIGURES/deltas-irf.png)
+
 ## Environments
 Environments are contained in the folder "envs". Single agent environment are compatible with the OpenAi Gym interface, while multi-agent environments are compatible with that of Ray-RLlib. 
 
